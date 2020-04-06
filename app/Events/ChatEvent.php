@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use App\MessageModel;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -22,12 +23,15 @@ class ChatEvent implements ShouldBroadcast
      */
 
     public $msg;
+    public $content;
     public $rid;
     public $user;
 
     public function __construct($msg,$rid)
     {
+        // $this->msg = MessageModel::find($msg[0]->id)->contents;
         $this->msg = $msg;
+        $this->content = MessageModel::find($msg[0]->id)->contents;
         $this->rid = $rid;
         $this->user = Auth::user()->id;
 
@@ -44,7 +48,7 @@ class ChatEvent implements ShouldBroadcast
     }
 
     public function broadcastWith(){
-        return [$this->msg];
+        return ['message'=>$this->msg[0],'contents'=>$this->content];
     }
 
 

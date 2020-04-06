@@ -17,7 +17,7 @@ export default function ChatUI2() {
     const [msgsCount, setMsgsCount] = useState('');
 
     const [flag, setFlag] = useState(true);
-    const [socketData, setsocketData] = useState([]);
+    const [socketData, setsocketData] = useState({});
 
     const [currentUsers, setCurrentUsers] = useState([])
     const [joinedUser, setJoinedUser] = useState({})
@@ -27,6 +27,18 @@ export default function ChatUI2() {
     const [msgFrom, setMsgFrom] = useState('');
     const [msgFromFlag, setMsgFromFlag] = useState('');
     const history = useHistory();
+
+
+    useEffect(() => {
+        axios.get('/api/checkauth')
+            .then(response => {
+
+                if (!response.data.auth) {
+                    history.push('/login')
+                }
+            })
+
+    }, [])
 
 
     useEffect(() => {

@@ -11,6 +11,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use PhpParser\Node\Stmt\TryCatch;
 use Validator;
 
@@ -57,7 +58,7 @@ class MessageController extends Controller
 
         $messages = $messagesQ->map(function ($msg) {
             // return MessageModel::find($msg->id)->image;
-            $contents = MessageModel::find($msg->id)->content;
+            $contents = MessageModel::find($msg->id)->contents;
             $msg->contents = $contents->map(function ($content) {
                 $a['content'] = $content->content;
                 $a['format'] = $content->format;
@@ -106,9 +107,6 @@ class MessageController extends Controller
     public function store(Request $request)
     {
 
-        // return $request;
-
-
         $user = Auth::user();
         // $validator = validator::make($request->all(), [
         //     'msg' => 'required'
@@ -120,71 +118,32 @@ class MessageController extends Controller
         $newMsg->msg_to = $request->msg_to;
         $newMsg->save();
 
-        collect($request->content)->map(function ($item) use ($request,$newMsg) {
-            
-            if($request->format == 'image'){
+        collect($request->content)->map(function ($item) use ($request, $newMsg) {
+
+            if ($request->format == 'image') {
                 $item->store('pics');
 
-                $newMsg->content()->create([
+                $newMsg->contents()->create([
                     'content' => $item->hashName(),
                     'format' => $request->format,
                 ]);
-            }elseif($request->format == 'text'){
-                $newMsg->content()->create([
+            } elseif ($request->format == 'text') {
+                $newMsg->contents()->create([
                     'content' => $item,
                     'format' => $request->format,
                 ]);
             }
-           
         });
-   
+
 
         $newMsg->save();
 
-        return $newMsg;
-
-        $id = DB::table('msg_tbl')
-            ->insertGetId([
-                'msg_from' => $user->id,
-                'msg_to' => $request->msg_to,
-            ]);
-
-        if ($request->format == 'text') {
-
-            $content = DB::table('msg_content_tbl')
-                ->insert([
-                    'content' => $request->content,
-                    'format' => $request->format,
-                    'msg_id' => $id
-                ]);
-        }
+        $message = $newMsg::with('contents')->where('id', $newMsg->id)->get();
 
 
+        event(new ChatEvent($message, $request->msg_to));
 
-        $message = MessageModel::find($id);
-
-        if ($request->format == 'image') {
-
-            collect($request->content)->map(function ($item) use ($id, $request) {
-                $item->store('pics');
-                DB::table('msg_content_tbl')
-                    ->insert([
-                        'content' => $item->hashName(),
-                        'format' => $request->format,
-                        'msg_id' => $id
-                    ]);
-            });
-            // $uploadedFiles[] = $request->pics[0]->getClientOriginalName();
-            // $uploadedFiles[] = $request->pics[0]->path();
-            // $uploadedFiles[] = $request->pics[0]->extension();
-            // $uploadedFiles[] = $request->pics[0]->hashName();
-            // $uploadedFiles[] = $request->pics[0]->hashName();
-            // $uploadedFiles[] = $request->pics[0]->clientExtension();
-        }
-
-
-        // event(new ChatEvent($message, $request->msg_to));
-        // event(new NewEvent($user->id, $request->msg_to));
+        event(new NewEvent($user->id, $request->msg_to));
 
         return response()->json(['message' => $message]);
     }
@@ -198,34 +157,48 @@ class MessageController extends Controller
 
         if (Auth::user()->id == $msg->sender['id']) {
 
-            if ($msg->is_deleted_from_reciever == 1) {
-                $msg->delete();
-            } else {
-                DB::table('msg_tbl')
-                    ->where('id', $request->id)
-                    ->update(['is_deleted_from_sender' => 1]);
-            }
+            $this->deleteMessageFrom($msg,'is_deleted_from_reciever','is_deleted_from_sender');
+
         } elseif (Auth::user()->id == $msg->receiver['id']) {
 
-            if ($msg->is_deleted_from_sender == 1) {
-                $msg->delete();
-            } else {
-                DB::table('msg_tbl')
-                    ->where('id', $request->id)
-                    ->update(['is_deleted_from_reciever' => 1]);
-            }
+            $this->deleteMessageFrom($msg,'is_deleted_from_sender','is_deleted_from_reciever');
+
         }
 
         return response()->json(['data' => 'message deleted successfully'], 200);
     }
+
+
+    public function deleteMessageFrom($msg,$property1,$property2)
+    {
+        if ($msg->{$property1} == 1) {
+
+            $msg->contents->map(function ($item) {
+                if ($item->format == 'image') {
+                    Storage::delete('/pics/' . $item->content);
+                }
+            });
+
+            DB::table('msg_content_tbl')
+                ->where('msg_id', $msg->id)
+                ->delete();
+
+            $msg->delete();
+        } else {
+            $msg->{$property2} = 1;
+            $msg->save();
+        }
+    }
+
+
+
     public function deleteAll(Request $request)
     {
         $user = Auth::user();
         $recipent = $request;
 
         try {
-
-
+            
             $receivedMessages = DB::table('msg_tbl')
                 ->where('msg_to', $user->id)
                 ->Where('msg_from', $recipent->id)

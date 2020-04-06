@@ -40,4 +40,5 @@ class User extends Authenticatable
     public function received_messages(){
         return $this->hasMany('App\MessageModel','msg_to','id');
     }
+
 }

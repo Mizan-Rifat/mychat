@@ -17,7 +17,6 @@ import ImageIcon from '@material-ui/icons/Image';
 function ChatBoxFooter() {
 
     const [message, setMessage] = useState('')
-    const [message2, setMessage2] = useState('')
     const [attachments, setAttachments] = useState([])
     const [previews, setPreviews] = useState('')
     const [currentMsg,setCurrentMsg]=useState({})
@@ -33,9 +32,9 @@ function ChatBoxFooter() {
 
         formData.append('msg_to', rid.id)
 
-        if (message2 != '') {
+        if (message != '') {
 
-            formData.append('content[]', message2)
+            formData.append('content[]', message)
             formData.append('format', 'text')
 
         }
@@ -46,9 +45,9 @@ function ChatBoxFooter() {
         }
 
         axios.post('/api/sendmessage', formData, config).then(response => {
-            console.log(response)
-            // setMsgs([...msgs, response.data.message])
-            // setFlag(!flag)
+            // console.log(response.data.message[0])
+            setMsgs([...msgs, response.data.message[0]])
+            setFlag(!flag)
 
         })
         setMessage('')
@@ -57,7 +56,6 @@ function ChatBoxFooter() {
 
     const handleChange = (e) => {
         setMessage(e.target.value)
-        setMessage2(e.target.value)
     }
 
     const handleFocus = () => {
@@ -75,14 +73,11 @@ function ChatBoxFooter() {
     }
 
     const addEmoji = (emoji) => {
-        console.log(emoji)
         setMessage(message + emoji.native)
-        setMessage2(`${message} :${emoji.colons}:`)
     }
 
     const handleUploadChange = (e) => {
         setMessage('')
-        setMessage2('')
         // console.log(e.target.files)
         let array = e.target.files;
         let fileArray = [];
@@ -161,6 +156,7 @@ function ChatBoxFooter() {
                     onChange={handleChange}
                     onFocus={handleFocus}
                     onBlur={handleBlur}
+                    autoComplete='off'
                     disableUnderline
                     endAdornment={
                         <InputAdornment position="end">

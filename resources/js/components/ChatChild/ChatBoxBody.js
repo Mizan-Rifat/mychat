@@ -27,6 +27,7 @@ export default function ChatBoxBody() {
     const [totalPage, setTotalPage] = useState('');
     const [typing, setTyping] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    // const [socketDataFlag] = useState(false);
 
     const { rid, setRid, msgs, setMsgs, flag, setFlag, socketData, setsocketData, msgsCount, setMsgsCount, contacts, setContacts } = useContext(MyContext);
 
@@ -82,11 +83,12 @@ export default function ChatBoxBody() {
         window.Echo.private(`chat.${Math.min(parseInt(rid.id), parseInt(localStorage.getItem('userID')))}.${Math.max(parseInt(rid.id), parseInt(localStorage.getItem('userID')))}`)
             .listen('ChatEvent', function (data) {
 
-                setsocketData(data)
+                setsocketData([data])
+                // console.log(data);
 
-                if (data[0].msg_to == localStorage.getItem('userID')) {
+                if (data.message.msg_to == localStorage.getItem('userID')) {
                     axios.post('/api/setseen', {
-                        id: data[0].id
+                        id: data.message.id
                     })
                 }
 
@@ -103,8 +105,16 @@ export default function ChatBoxBody() {
 
     }, [])
     useEffect(() => {
-        setMsgs([...msgs, ...socketData])
-        setFlag(true)
+        if (socketData.length > 0) {
+            let msg = {
+                ...socketData[0].message, contents: socketData[0].contents
+            }
+            console.log('msg', msg)     
+                setMsgs([...msgs, msg])
+            setFlag(true)
+        }
+
+
     }, [socketData])
 
     return (
@@ -207,13 +217,9 @@ function SingleMsg({ index, msg, setShowMenu, showMenu, msgs, setMsgs, sender, r
                             <div className="img_cont_msg" style={{ position: 'relative' }}>
                                 <img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg" className="rounded-circle user_img_msg" />
                                 <div className="doneIcon" >
-                                    {/* <RadioButtonUncheckedOutlinedIcon fontSize='inherit' /> */}
                                     <CheckCircleOutlineRoundedIcon fontSize='inherit' />
                                 </div>
                             </div>
-
-
-
 
                             <div className="msg_cotainer" style={{ display: 'grid' }}>
                                 {
@@ -229,7 +235,7 @@ function SingleMsg({ index, msg, setShowMenu, showMenu, msgs, setMsgs, sender, r
                                             {
                                                 msg.contents.map(item => (
 
-                                                    <img src={`/storage/pics/${item.content}`} height='100%' style={{ borderRadius: '5px', height: '100px', width: '100px', marginRight: '5px' }} />
+                                                    <img src={`/storage/pics/${item.content}`} className='img' />
 
                                                 ))
                                             }
@@ -287,7 +293,7 @@ function SingleMsg({ index, msg, setShowMenu, showMenu, msgs, setMsgs, sender, r
                                             {
                                                 msg.contents.map(item => (
 
-                                                    <img src={`/storage/pics/${item.content}`} height='100%' style={{ borderRadius: '5px', height: '100px', width: '100px', marginRight: '5px' }} />
+                                                    <img src={`/storage/pics/${item.content}`} className='img' />
 
                                                 ))
                                             }

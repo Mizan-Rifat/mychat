@@ -193,13 +193,15 @@ html {
     margin-right: 20px;
 }
 
-.msg_cotainer,.msg_cotainer_send {
+.msg_cotainer,
+.msg_cotainer_send {
     margin-top: auto;
     margin-bottom: auto;
     margin-left: 10px;
     padding: 5px 10px;
     position: relative;
-    min-width: 150px;
+    min-width: 105px;
+    text-align: center;
     /* max-width: 200px; */
 }
 
@@ -209,18 +211,28 @@ html {
     padding: 5px 10px;
     max-width: 200px;
 }
-.img_container{
+
+.img_container {
     max-width: 300px;
     flex-wrap: wrap;
 }
 
-.text_container_send{
+.img {
+    border-radius: 5px;
+    height: 100px;
+    width: 100px;
+    margin-right: 5px;
+    margin-bottom: 5px
+}
+
+.text_container_send {
     border-radius: 25px;
     background-color: #78e08f;
     padding: 5px 10px;
     max-width: 200px;
 }
-.doneIcon{
+
+.doneIcon {
     position: absolute;
     font-size: 10px;
     color: rgb(255, 255, 255);

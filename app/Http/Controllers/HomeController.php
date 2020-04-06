@@ -46,14 +46,26 @@ class HomeController extends Controller
     // SELECT * FROM `msg_tbl` INNER JOIN msg_image_tbl ON msg_tbl.id = msg_image_tbl.msg_id WHERE msg_tbl.id = 1
     public function test()
     {
-        $msgs = DB::table('msg_tbl')->get();
 
-      return  $msgs->map(function($msg){
-            // return MessageModel::find($msg->id)->image;
-            $msg->image = MessageModel::find($msg->id)->image;
-            return $msg;
-        });
-       return MessageModel::find(2)->image;
+       
+
+        // return DB::table('msg_tbl')
+        //     ->where(function ($query){
+        //         $query->where('msg_to', 1)
+        //             ->Where('msg_from', 2)
+        //             ->where('is_deleted_from_reciever', 0);
+        //     })
+        //     ->orWhere((function ($query){
+        //         $query->where('msg_to', 2)
+        //             ->Where('msg_from', 1)
+        //             ->where('is_deleted_from_sender', 0);
+        //     }))
+        //     ->offset(0)
+        //     // ->limit(0)
+        //     ->get();
+
+        // DB::table('msg_tbl')->truncate();
+        // DB::table('msg_content_tbl')->truncate();
     }
 
     public function unSeenMessages($user){

@@ -25,7 +25,7 @@ class MessageModel extends Model
     public function receiver(){
         return $this->hasOne('App\User','id','msg_to');
     }
-    public function content(){
+    public function contents(){
         return $this->hasMany('App\MsgContent','msg_id','id');
     }
 }
