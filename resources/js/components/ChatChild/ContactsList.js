@@ -10,12 +10,10 @@ import ListItem from '@material-ui/core/ListItem';
 
 export default function ContactsList() {
 
-    const history = useHistory();
-    // const [active, setActive] = useState('');
     const [flag, setFlag] = useState(false);
     const [query, setQuery] = useQueryState('rid', '')
 
-    const { rid,active,setActive,setRid, currentUsers, contacts, setContacts, setFilteredContacts } = useContext(MyContext);
+    const { active,setActive,setRid, currentUsers, contacts, setContacts, setFilteredContacts } = useContext(MyContext);
     const { setOpen } = useContext(drawerContext);
 
     const handleSelect = (contact) => {
@@ -33,7 +31,7 @@ export default function ContactsList() {
     }
 
     useEffect(() => {
-        // setActive(rid.id)
+
         axios.get('/api/allusers')
             .then(response => {
                 setContacts(response.data.users.filter(item => item.id != localStorage.getItem('userID')))
@@ -41,9 +39,6 @@ export default function ContactsList() {
                 setFlag(!flag)
             })
     }, [])
-  
-
-
 
     return (
         <Scrollbar>

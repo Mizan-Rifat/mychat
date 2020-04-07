@@ -8,8 +8,13 @@ import IconButton from '@material-ui/core/IconButton';
 import { makeStyles } from '@material-ui/core/styles';
 import VisibilitySensor from 'react-visibility-sensor';
 import Scrollbar from "react-scrollbars-custom";
+
+import CircularProgress from '@material-ui/core/CircularProgress';
 var dateFormat = require('dateformat');
 import CheckCircleOutlineRoundedIcon from '@material-ui/icons/CheckCircleOutlineRounded';
+
+
+
 
 const useStyles = makeStyles(theme => ({
     msgBody: {
@@ -28,9 +33,9 @@ export default function ChatBoxBody(props) {
     const [totalPage, setTotalPage] = useState('');
     const [typing, setTyping] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
-    // const [socketDataFlag] = useState(false);
+    const [loading, setLoading] = useState(true)
 
-    const { rid, setRid, msgs, setMsgs, flag, setFlag, socketData, setsocketData, msgsCount, setMsgsCount, contacts, setContacts } = useContext(MyContext);
+    const { rid, msgs, setMsgs, flag, setFlag, socketData, activeUserName, setsocketData, setMsgsCount } = useContext(MyContext);
 
     const messagesEndRef = useRef(null)
 
@@ -71,6 +76,7 @@ export default function ChatBoxBody(props) {
                 setMsgs([...response.data.messages])
                 setFlag(true)
                 setRuser(true)
+                setLoading(false)
                 setMsgsCount(response.data.count)
                 setTotalPage(Math.ceil(response.data.count / 10) == 0 ? 1 : Math.ceil(response.data.count / 10))
 
@@ -87,12 +93,14 @@ export default function ChatBoxBody(props) {
 
 
     useEffect(() => {
-        ruser ?
+
+        !loading ?
+
             window.Echo.private(`chat.${Math.min(parseInt(rid), parseInt(localStorage.getItem('userID')))}.${Math.max(parseInt(rid), parseInt(localStorage.getItem('userID')))}`)
                 .listen('ChatEvent', function (data) {
 
                     setsocketData([data])
-                    // console.log(data);
+                    console.log(data);
 
                     if (data.message.msg_to == localStorage.getItem('userID')) {
                         axios.post('/api/setseen', {
@@ -113,7 +121,7 @@ export default function ChatBoxBody(props) {
             : ''
 
 
-    }, [])
+    }, [loading])
     useEffect(() => {
         if (socketData.length > 0) {
             let msg = {
@@ -130,52 +138,58 @@ export default function ChatBoxBody(props) {
     return (
 
 
-
         <Scrollbar>
-            <div className="card-body msg_card_body" >
+            {
+                loading ?
+                
+                <div className="d-flex justify-content-center align-items-center">
+                    <CircularProgress /> 
+                </div>
+                :
+
+                    <div className="card-body msg_card_body" >
 
 
-                {
-                    ruser ?
+                        {
+                            ruser ?
 
-                        <>
-                            {
-                                page != totalPage ?
-                                    <div className="d-flex justify-content-center">
-                                        <Chip label="Load More" color='primary' onClick={loadMore} />
-                                    </div> : ''
-                            }
+                                <>
+                                    {
+                                        page != totalPage ?
+                                            <div className="d-flex justify-content-center">
+                                                <Chip label="Load More" color='primary' onClick={loadMore} />
+                                            </div> : ''
+                                    }
 
-                            {
-                                msgs.map((msg, index) => (
+                                    {
+                                        msgs.map((msg, index) => (
 
-                                    <SingleMsg index={index} msg={msg} showMenu={showMenu} setShowMenu={setShowMenu} msgs={msgs} setMsgs={setMsgs} sender={msg.msg_from == localStorage.getItem('userID') ? true : false} rid={rid} />
+                                            <SingleMsg index={index} msg={msg} showMenu={showMenu} setShowMenu={setShowMenu} msgs={msgs} setMsgs={setMsgs} activeUserName={activeUserName} sender={msg.msg_from == localStorage.getItem('userID') ? true : false} rid={rid} />
 
-                                ))
-                            }
+                                        ))
+                                    }
 
-                            <div className="d-flex justify-content-center" style={{ position: 'absolute', left: '50%', right: '50%' }}>
-                                {
-                                    typing ?
-                                        <small><Chip label="Typing..." color='primary' /></small>
-                                        : ''
-                                }
-                            </div>
-
-                            <div ref={messagesEndRef} />
-                        </>
-                        :
+                                    <div className="d-flex justify-content-center" style={{ position: 'absolute', left: '50%', right: '50%' }}>
+                                        {
+                                            typing ?
+                                                <small><Chip label="Typing..." color='primary' /></small>
+                                                : ''
+                                        }
+                                    </div>
 
 
-                        <div className="d-flex justify-content-center align-items-center">
-                            <p style={{fontSize:'25px',color:'rgba(150, 6, 6, 0.87)'}}>No User Found</p>
-                            <div ref={messagesEndRef} />
+                                </>
+                                :
 
-                        </div>
 
-                }
-            </div>
+                                <div className="d-flex justify-content-center align-items-center">
+                                    <p style={{ fontSize: '25px', color: 'rgba(150, 6, 6, 0.87)' }}>No User Found</p>
+                                </div>
 
+                        }
+                    </div>
+            }
+            <div ref={messagesEndRef} />
 
         </Scrollbar>
 
@@ -234,18 +248,15 @@ function MsgMenuButton({ id, msgs, setMsgs }) {
 }
 
 
-function SingleMsg({ index, msg, setShowMenu, showMenu, msgs, setMsgs, sender, rid }) {
+function SingleMsg({ index, msg, setShowMenu, showMenu, msgs, setMsgs, sender, rid, activeUserName }) {
 
-    const formattedMsg = (msg) => {
-
-    }
     return (
         <>
             {
                 sender ?
 
                     <div key={index} className={`d-flex justify-content-between mb-4`} onMouseEnter={() => setShowMenu(index + 1)} onMouseLeave={() => setShowMenu('')}>
-                        <div className="d-flex justify-content-start" >
+                        <div className="d-flex justify-content-start" style={{maxWidth:'300px'}}>
                             <div className="img_cont_msg" style={{ position: 'relative' }}>
                                 <img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg" className="rounded-circle user_img_msg" />
                                 <div className="doneIcon" >
@@ -307,7 +318,7 @@ function SingleMsg({ index, msg, setShowMenu, showMenu, msgs, setMsgs, sender, r
                                 </div>
                                 : <div></div>
                         }
-                        <div className="d-flex justify-content-end">
+                        <div className="d-flex justify-content-end" style={{maxWidth:'300px'}}>
                             <div className="msg_cotainer_send">
                                 {/* {msg.msg} */}
 
@@ -340,7 +351,7 @@ function SingleMsg({ index, msg, setShowMenu, showMenu, msgs, setMsgs, sender, r
 
 
                                 <span className="msg_time_send">{dateFormat(msg.created_at, "h:MM TT, mmm d")}</span>
-                                <span className="receiver">{rid.name.split(' ')[0]}</span>
+                                <span className="receiver">{activeUserName.split(' ')[0]}</span>
                             </div>
 
                             <div className="img_cont_msg">

@@ -4,14 +4,11 @@ import MenuItem from '@material-ui/core/MenuItem';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import IconButton from '@material-ui/core/IconButton';
 import { MyContext } from '../ChatUI2';
-import Axios from 'axios';
-
 
 export default function ChatBoxHeader() {
     const [anchorEl, setAnchorEl] = React.useState(null);
-    const [activeUserName,setActiveUserName] = useState('');
 
-    const { rid, setMsgs, msgsCount, currentUsers, active, contacts } = useContext(MyContext);
+    const { rid, setMsgs, msgsCount, currentUsers, activeUserName} = useContext(MyContext);
 
     const handleClick = event => {
         setAnchorEl(event.currentTarget);
@@ -23,7 +20,7 @@ export default function ChatBoxHeader() {
 
     const handleDelete = () => {
         axios.post('/api/deleteallmessages', {
-            id: rid.id
+            id: rid
         })
             .then(response => {
                 setMsgs([]);
@@ -31,20 +28,14 @@ export default function ChatBoxHeader() {
         setAnchorEl(null);
     }
 
-    useEffect(() => {
-       const activeUser =  contacts.find(contact => (
-            contact.id == active
-        ))
-        activeUser != undefined ? 
-        setActiveUserName(activeUser.name) : ''
-}, [rid,contacts])
+ 
 return (
     <div className="card-header msg_head d-flex justify-content-between">
         <div className="d-flex bd-highlight">
             <div className="img_cont">
                 <img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg" className="rounded-circle user_img" />
                 {
-                    currentUsers.some(user => user.id == rid.id) ? <span className="online_icon" /> : <span className="online_icon offline" />
+                    currentUsers.some(user => user.id == rid) ? <span className="online_icon" /> : <span className="online_icon offline" />
                 }
 
             </div>

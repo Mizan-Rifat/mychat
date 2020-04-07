@@ -64,8 +64,8 @@ class HomeController extends Controller
         //     // ->limit(0)
         //     ->get();
 
-        // DB::table('msg_tbl')->truncate();
-        // DB::table('msg_content_tbl')->truncate();
+        DB::table('msg_tbl')->truncate();
+        DB::table('msg_content_tbl')->truncate();
     }
 
     public function unSeenMessages($user){

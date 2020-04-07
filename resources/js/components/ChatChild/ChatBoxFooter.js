@@ -3,14 +3,10 @@ import SendIcon from '@material-ui/icons/Send';
 import { MyContext } from '../ChatUI2';
 import IconButton from '@material-ui/core/IconButton';
 import Input from '@material-ui/core/Input';
-import Button from '@material-ui/core/Button';
-import InputLabel from '@material-ui/core/InputLabel';
 import InputAdornment from '@material-ui/core/InputAdornment';
-import FormControl from '@material-ui/core/FormControl';
 import InsertEmoticonIcon from '@material-ui/icons/InsertEmoticon';
 import 'emoji-mart/css/emoji-mart.css'
 import { Picker } from 'emoji-mart'
-import { Emoji } from 'emoji-mart'
 import Badge from '@material-ui/core/Badge';
 import ImageIcon from '@material-ui/icons/Image';
 
@@ -18,9 +14,6 @@ function ChatBoxFooter() {
 
     const [message, setMessage] = useState('')
     const [attachments, setAttachments] = useState([])
-    const [previews, setPreviews] = useState('')
-    const [currentMsg,setCurrentMsg]=useState({})
-
     const [picker, setPicker] = useState(false);
 
     const { msgs, setMsgs, rid, flag, setFlag } = useContext(MyContext);

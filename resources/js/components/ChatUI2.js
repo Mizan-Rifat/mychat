@@ -11,18 +11,14 @@ import { drawerContext } from './App'
 export const MyContext = createContext();
 
 export default function ChatUI2(props) {
+
     const { setOpen } = useContext(drawerContext);
-
-
     const [rid, setRid] = useState('');
-    const [ridStatus, setRidStatus] = useState(false);
     const [msgs, setMsgs] = useState([]);
     const [msgsCount, setMsgsCount] = useState('');
-
     const [flag, setFlag] = useState(true);
     const [socketData, setsocketData] = useState({});
     const [active, setActive] = useState('');
-
     const [currentUsers, setCurrentUsers] = useState([])
     const [joinedUser, setJoinedUser] = useState({})
     const [leavedUser, setLeavedUser] = useState({})
@@ -30,6 +26,7 @@ export default function ChatUI2(props) {
     const [filteredContacts, setFilteredContacts] = useState([]);
     const [msgFrom, setMsgFrom] = useState('');
     const [msgFromFlag, setMsgFromFlag] = useState('');
+    const [activeUserName,setActiveUserName] = useState('');
     const history = useHistory();
 
 
@@ -64,7 +61,7 @@ export default function ChatUI2(props) {
             .joining((user) => {
                 setJoinedUser(user)
             })
-            .leaving((user) => {
+            .leaving((user) => {`   `
 
                 setLeavedUser(user)
             })
@@ -100,6 +97,14 @@ export default function ChatUI2(props) {
     }, [rid])
 
     useEffect(() => {
+        const activeUser = contacts.find(contact => (
+            contact.id == active
+        ))
+        activeUser != undefined ?
+            setActiveUserName(activeUser.name) : ''
+    }, [rid, contacts])
+
+    useEffect(() => {
         setCurrentUsers([...currentUsers, joinedUser])
     }, [joinedUser])
 
@@ -117,7 +122,7 @@ export default function ChatUI2(props) {
                     <div className="col-md-5 col-xl-4 chat">
                         <div className="card mb-sm-3 mb-md-0 contacts_card">
 
-                            <MyContext.Provider value={{ rid, active, setActive, setRid, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts }}>
+                            <MyContext.Provider value={{ rid, active, setActive, setRid,activeUserName, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts }}>
 
                                 <Sidebar />
 
@@ -136,7 +141,7 @@ export default function ChatUI2(props) {
                             rid == '' ? <Welcome /> :
 
                                 <>
-                                    <MyContext.Provider value={{ rid, active, setRid, msgs, setMsgs, flag, setFlag, socketData, setsocketData, msgsCount, setMsgsCount, currentUsers, contacts, setContacts }}>
+                                    <MyContext.Provider value={{ rid, active, setRid, msgs, activeUserName,setMsgs, flag, setFlag, socketData, setsocketData, msgsCount, setMsgsCount, currentUsers, contacts, setContacts }}>
                                         <ChatBoxHeader />
                                         <ChatBoxBody />
                                         <ChatBoxFooter />
@@ -151,7 +156,7 @@ export default function ChatUI2(props) {
                     component={
 
                         <div className="card sidebarCard mb-sm-3 mb-md-0 contacts_card" >
-                            <MyContext.Provider value={{ rid,active, setRid, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts }}>
+                            <MyContext.Provider value={{ rid, active, setRid,activeUserName, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts }}>
 
                                 <Sidebar />
 
