@@ -9,7 +9,6 @@ import { makeStyles } from '@material-ui/core/styles';
 import VisibilitySensor from 'react-visibility-sensor';
 import Scrollbar from "react-scrollbars-custom";
 var dateFormat = require('dateformat');
-import RadioButtonUncheckedOutlinedIcon from '@material-ui/icons/RadioButtonUncheckedOutlined';
 import CheckCircleOutlineRoundedIcon from '@material-ui/icons/CheckCircleOutlineRounded';
 
 const useStyles = makeStyles(theme => ({
@@ -19,11 +18,13 @@ const useStyles = makeStyles(theme => ({
         },
     }
 }))
-export default function ChatBoxBody() {
+export default function ChatBoxBody(props) {
+
+    // const query = new URLSearchParams(props.location.search);
     const classes = useStyles();
 
-
     const [page, setPage] = useState(1);
+    const [ruser, setRuser] = useState(false);
     const [totalPage, setTotalPage] = useState('');
     const [typing, setTyping] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
@@ -46,26 +47,30 @@ export default function ChatBoxBody() {
     });
 
     useEffect(() => {
-        axios.get(`/api/messages?rid=${rid.id}&page=${page}`)
-            .then(response => {
-                setMsgs([...response.data.messages, ...msgs])
-                setFlag(false)
-                setMsgsCount(response.data.count)
-                setTotalPage(Math.ceil(response.data.count / 10))
+        if (page != 1) {
+            axios.get(`/api/messages?rid=${rid}&page=${page}`)
+                .then(response => {
+                    setMsgs([...response.data.messages, ...msgs])
+                    setFlag(false)
+                    setMsgsCount(response.data.count)
+                    setTotalPage(Math.ceil(response.data.count / 10))
 
-            }).catch(e => {
-                if (e.response.status == 401) {
-                    history.push('/')
-                }
-            })
+                }).catch(e => {
+                    if (e.response.status == 401) {
+                        history.push('/')
+                    }
+                })
+        }
 
     }, [page])
 
     useEffect(() => {
-        axios.get(`/api/messages?rid=${rid.id}&page=${page}`)
+
+        axios.get(`/api/messages?rid=${rid}&page=${page}`)
             .then(response => {
                 setMsgs([...response.data.messages])
                 setFlag(true)
+                setRuser(true)
                 setMsgsCount(response.data.count)
                 setTotalPage(Math.ceil(response.data.count / 10) == 0 ? 1 : Math.ceil(response.data.count / 10))
 
@@ -73,34 +78,39 @@ export default function ChatBoxBody() {
                 if (e.response.status == 401) {
                     history.push('/')
                 }
+                if (e.response.status == 404) {
+                    setRuser(false)
+                }
             })
 
     }, [rid])
 
 
     useEffect(() => {
+        ruser ?
+            window.Echo.private(`chat.${Math.min(parseInt(rid), parseInt(localStorage.getItem('userID')))}.${Math.max(parseInt(rid), parseInt(localStorage.getItem('userID')))}`)
+                .listen('ChatEvent', function (data) {
 
-        window.Echo.private(`chat.${Math.min(parseInt(rid.id), parseInt(localStorage.getItem('userID')))}.${Math.max(parseInt(rid.id), parseInt(localStorage.getItem('userID')))}`)
-            .listen('ChatEvent', function (data) {
+                    setsocketData([data])
+                    // console.log(data);
 
-                setsocketData([data])
-                // console.log(data);
+                    if (data.message.msg_to == localStorage.getItem('userID')) {
+                        axios.post('/api/setseen', {
+                            id: data.message.id
+                        })
+                    }
 
-                if (data.message.msg_to == localStorage.getItem('userID')) {
-                    axios.post('/api/setseen', {
-                        id: data.message.id
-                    })
-                }
+                })
+                .listenForWhisper('typing', (e) => {
+                    setTyping(true);
+                    console.log('typing')
+                })
+                .listenForWhisper('notTyping', (e) => {
 
-            })
-            .listenForWhisper('typing', (e) => {
-                setTyping(true);
-                console.log('typing')
-            })
-            .listenForWhisper('notTyping', (e) => {
+                    setTyping(false);
+                })
 
-                setTyping(false);
-            })
+            : ''
 
 
     }, [])
@@ -109,8 +119,8 @@ export default function ChatBoxBody() {
             let msg = {
                 ...socketData[0].message, contents: socketData[0].contents
             }
-            console.log('msg', msg)     
-                setMsgs([...msgs, msg])
+            console.log('msg', msg)
+            setMsgs([...msgs, msg])
             setFlag(true)
         }
 
@@ -118,35 +128,57 @@ export default function ChatBoxBody() {
     }, [socketData])
 
     return (
+
+
+
         <Scrollbar>
             <div className="card-body msg_card_body" >
-                {
-                    page != totalPage ?
-                        <div className="d-flex justify-content-center">
-                            <Chip label="Load More" color='primary' onClick={loadMore} />
-                        </div> : ''
-                }
+
 
                 {
-                    msgs.map((msg, index) => (
+                    ruser ?
 
-                        <SingleMsg index={index} msg={msg} showMenu={showMenu} setShowMenu={setShowMenu} msgs={msgs} setMsgs={setMsgs} sender={msg.msg_from == localStorage.getItem('userID') ? true : false} rid={rid} />
+                        <>
+                            {
+                                page != totalPage ?
+                                    <div className="d-flex justify-content-center">
+                                        <Chip label="Load More" color='primary' onClick={loadMore} />
+                                    </div> : ''
+                            }
 
-                    ))
+                            {
+                                msgs.map((msg, index) => (
+
+                                    <SingleMsg index={index} msg={msg} showMenu={showMenu} setShowMenu={setShowMenu} msgs={msgs} setMsgs={setMsgs} sender={msg.msg_from == localStorage.getItem('userID') ? true : false} rid={rid} />
+
+                                ))
+                            }
+
+                            <div className="d-flex justify-content-center" style={{ position: 'absolute', left: '50%', right: '50%' }}>
+                                {
+                                    typing ?
+                                        <small><Chip label="Typing..." color='primary' /></small>
+                                        : ''
+                                }
+                            </div>
+
+                            <div ref={messagesEndRef} />
+                        </>
+                        :
+
+
+                        <div className="d-flex justify-content-center align-items-center">
+                            <p style={{fontSize:'25px',color:'rgba(150, 6, 6, 0.87)'}}>No User Found</p>
+                            <div ref={messagesEndRef} />
+
+                        </div>
+
                 }
-
-                <div className="d-flex justify-content-center" style={{ position: 'absolute', left: '50%', right: '50%' }}>
-                    {
-                        typing ?
-                            <small><Chip label="Typing..." color='primary' /></small>
-                            : ''
-                    }
-                </div>
-
-                <div ref={messagesEndRef} />
-
             </div>
+
+
         </Scrollbar>
+
 
 
     )

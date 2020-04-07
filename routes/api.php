@@ -35,6 +35,7 @@ Route::group(['middleware' => 'auth:airlock'], function () {
     Route::post('/setseen', 'MessageController@setSeen');
     Route::get('/getunreadmessages','MessageController@getMessagesCount');
     Route::post('/uploadfiles','MessageController@uploadFiles');
+    Route::get('/checkrid/{rid}','MessageController@checkRid');
 
 });
 

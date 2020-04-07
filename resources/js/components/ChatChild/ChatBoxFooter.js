@@ -30,7 +30,7 @@ function ChatBoxFooter() {
         const config = { headers: { 'Content-Type': 'multipart/form-data' } };
         const formData = new FormData;
 
-        formData.append('msg_to', rid.id)
+        formData.append('msg_to', rid)
 
         if (message != '') {
 
@@ -60,13 +60,13 @@ function ChatBoxFooter() {
 
     const handleFocus = () => {
         setPicker(false)
-        window.Echo.private(`chat.${Math.min(parseInt(rid.id), parseInt(localStorage.getItem('userID')))}.${Math.max(parseInt(rid.id), parseInt(localStorage.getItem('userID')))}`)
+        window.Echo.private(`chat.${Math.min(parseInt(rid), parseInt(localStorage.getItem('userID')))}.${Math.max(parseInt(rid), parseInt(localStorage.getItem('userID')))}`)
             .whisper('typing', {
                 name: 'typing',
             });
     }
     const handleBlur = () => {
-        window.Echo.private(`chat.${Math.min(parseInt(rid.id), parseInt(localStorage.getItem('userID')))}.${Math.max(parseInt(rid.id), parseInt(localStorage.getItem('userID')))}`)
+        window.Echo.private(`chat.${Math.min(parseInt(rid), parseInt(localStorage.getItem('userID')))}.${Math.max(parseInt(rid), parseInt(localStorage.getItem('userID')))}`)
             .whisper('notTyping', {
                 name: 'notTyping',
             });

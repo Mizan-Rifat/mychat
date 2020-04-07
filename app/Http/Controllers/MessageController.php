@@ -27,6 +27,12 @@ class MessageController extends Controller
         $recipent = User::find($rid);
         $limit = 10;
 
+        $ruser = User::find($rid);
+
+        if(!$ruser){
+            return response()->json([],404);
+        }
+
         $count = DB::table('msg_tbl')
             ->where(function ($query) use ($user, $recipent) {
                 $query->where('msg_to', $user->id)
@@ -262,8 +268,14 @@ class MessageController extends Controller
     }
 
 
-    public function uploadFiles(Request $request)
+    public function checkRid($rid)
     {
-        return $request;
+        $user = User::find($rid);
+        if($user){
+            return response()->json(['found' => true],200);
+        }else{
+            return response()->json(['found' => false],404);
+        }
+        
     }
 }

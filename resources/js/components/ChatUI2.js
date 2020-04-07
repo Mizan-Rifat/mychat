@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext } from 'react'
+import React, { useState, useEffect, createContext, useContext } from 'react'
 import ChatBoxHeader from './ChatChild/ChatBoxHeader';
 import ChatBoxBody from './ChatChild/ChatBoxBody';
 import ChatBoxFooter from './ChatChild/ChatBoxFooter';
@@ -7,17 +7,21 @@ import { Button, Hidden } from '@material-ui/core';
 import { useHistory } from 'react-router-dom'
 import Welcome from './Welcome';
 import MyDrawer from './MyDrawer'
-
+import { drawerContext } from './App'
 export const MyContext = createContext();
 
-export default function ChatUI2() {
+export default function ChatUI2(props) {
+    const { setOpen } = useContext(drawerContext);
+
 
     const [rid, setRid] = useState('');
+    const [ridStatus, setRidStatus] = useState(false);
     const [msgs, setMsgs] = useState([]);
     const [msgsCount, setMsgsCount] = useState('');
 
     const [flag, setFlag] = useState(true);
     const [socketData, setsocketData] = useState({});
+    const [active, setActive] = useState('');
 
     const [currentUsers, setCurrentUsers] = useState([])
     const [joinedUser, setJoinedUser] = useState({})
@@ -29,7 +33,15 @@ export default function ChatUI2() {
     const history = useHistory();
 
 
+
+
     useEffect(() => {
+        const query = new URLSearchParams(props.location.search);
+        const params = query.get('rid');
+        if (params != null) {
+            setRid(params)
+        }
+
         axios.get('/api/checkauth')
             .then(response => {
 
@@ -39,6 +51,8 @@ export default function ChatUI2() {
             })
 
     }, [])
+
+
 
 
     useEffect(() => {
@@ -71,6 +85,21 @@ export default function ChatUI2() {
     }, [msgFromFlag])
 
     useEffect(() => {
+
+        if (rid != '') {
+
+            setActive(rid)
+            setContacts(contacts.map(item => {
+                if (item.id == rid.id) {
+                    item.unReadMessages = 0;
+                }
+                return item;
+            }))
+            setOpen(false)
+        }
+    }, [rid])
+
+    useEffect(() => {
         setCurrentUsers([...currentUsers, joinedUser])
     }, [joinedUser])
 
@@ -88,7 +117,7 @@ export default function ChatUI2() {
                     <div className="col-md-5 col-xl-4 chat">
                         <div className="card mb-sm-3 mb-md-0 contacts_card">
 
-                            <MyContext.Provider value={{ rid, setRid, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts }}>
+                            <MyContext.Provider value={{ rid, active, setActive, setRid, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts }}>
 
                                 <Sidebar />
 
@@ -107,7 +136,7 @@ export default function ChatUI2() {
                             rid == '' ? <Welcome /> :
 
                                 <>
-                                    <MyContext.Provider value={{ rid, setRid, msgs, setMsgs, flag, setFlag, socketData, setsocketData, msgsCount, setMsgsCount, currentUsers, contacts, setContacts }}>
+                                    <MyContext.Provider value={{ rid, active, setRid, msgs, setMsgs, flag, setFlag, socketData, setsocketData, msgsCount, setMsgsCount, currentUsers, contacts, setContacts }}>
                                         <ChatBoxHeader />
                                         <ChatBoxBody />
                                         <ChatBoxFooter />
@@ -122,7 +151,7 @@ export default function ChatUI2() {
                     component={
 
                         <div className="card sidebarCard mb-sm-3 mb-md-0 contacts_card" >
-                            <MyContext.Provider value={{ rid, setRid, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts }}>
+                            <MyContext.Provider value={{ rid,active, setRid, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts }}>
 
                                 <Sidebar />
 
