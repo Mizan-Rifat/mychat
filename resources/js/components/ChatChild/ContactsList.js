@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { MyContext } from '../ChatUI2';
+import { MyContext } from '../ChatUI';
 import { drawerContext } from '../App';
 import { useHistory } from 'react-router-dom';
 import Scrollbar from "react-scrollbars-custom";
@@ -10,7 +10,7 @@ import ListItem from '@material-ui/core/ListItem';
 
 export default function ContactsList() {
 
-    const [flag, setFlag] = useState(false);
+    // const [flag, setFlag] = useState(false);
     const [query, setQuery] = useQueryState('rid', '')
 
     const { active,setActive,setRid, currentUsers, contacts, setContacts, setFilteredContacts } = useContext(MyContext);
@@ -36,7 +36,7 @@ export default function ContactsList() {
             .then(response => {
                 setContacts(response.data.users.filter(item => item.id != localStorage.getItem('userID')))
                 setFilteredContacts(response.data.users.filter(item => item.id != localStorage.getItem('userID')))
-                setFlag(!flag)
+                // setFlag(!flag)
             })
     }, [])
 

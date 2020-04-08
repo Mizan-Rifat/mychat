@@ -1,7 +1,7 @@
 import React, { useState, createContext } from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter, Switch, Route,withRouter} from 'react-router-dom';
-import ChatUI2 from './ChatUI2';
+import ChatUI from './ChatUI';
 import Login from './Login';
 import Register from './Register';
 import Test from './Test';
@@ -28,7 +28,7 @@ export default function App() {
                 <Route path='/' exact component={Login} />
 
                 <drawerContext.Provider value={{ open, setOpen }}>
-                    <Route path='/chat' component={ChatUI2} />
+                    <Route path='/chat' component={ChatUI} />
                     <Route path='/login' component={Login} />
                 <Route path='/register' component={Login} />
                 <Route path='/test' component={Test} />

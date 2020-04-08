@@ -1,6 +1,4 @@
-import React, { useState, useEffect, createContext } from 'react'
-import SearchBar from './ChatChild/SearchBar';
-import ContactsList from './ChatChild/ContactsList';
+import React, { useState, useEffect, createContext, useContext, useReducer } from 'react'
 import ChatBoxHeader from './ChatChild/ChatBoxHeader';
 import ChatBoxBody from './ChatChild/ChatBoxBody';
 import ChatBoxFooter from './ChatChild/ChatBoxFooter';
@@ -8,20 +6,19 @@ import Sidebar from './ChatChild/Sidebar';
 import { Button, Hidden } from '@material-ui/core';
 import { useHistory } from 'react-router-dom'
 import Welcome from './Welcome';
-import Test from './Test'
 import MyDrawer from './MyDrawer'
-
+import { drawerContext } from './App'
 export const MyContext = createContext();
 
-export default function ChatUI2(props) {
+export default function ChatUI(props) {
 
+    const { setOpen } = useContext(drawerContext);
     const [rid, setRid] = useState('');
     const [msgs, setMsgs] = useState([]);
     const [msgsCount, setMsgsCount] = useState('');
-
     const [flag, setFlag] = useState(true);
-    const [socketData, setsocketData] = useState([]);
-
+    const [socketData, setsocketData] = useState({});
+    const [active, setActive] = useState('');
     const [currentUsers, setCurrentUsers] = useState([])
     const [joinedUser, setJoinedUser] = useState({})
     const [leavedUser, setLeavedUser] = useState({})
@@ -29,7 +26,28 @@ export default function ChatUI2(props) {
     const [filteredContacts, setFilteredContacts] = useState([]);
     const [msgFrom, setMsgFrom] = useState('');
     const [msgFromFlag, setMsgFromFlag] = useState('');
+    const [activeUserName,setActiveUserName] = useState('');
     const history = useHistory();
+
+    
+    useEffect(() => {
+        const query = new URLSearchParams(props.location.search);
+        const params = query.get('rid');
+        if (params != null) {
+            setRid(params)
+        }
+
+        axios.get('/api/checkauth')
+            .then(response => {
+
+                if (!response.data.auth) {
+                    history.push('/login')
+                }
+            })
+
+    }, [])
+
+
 
 
     useEffect(() => {
@@ -41,7 +59,7 @@ export default function ChatUI2(props) {
             .joining((user) => {
                 setJoinedUser(user)
             })
-            .leaving((user) => {
+            .leaving((user) => {`   `
 
                 setLeavedUser(user)
             })
@@ -62,6 +80,29 @@ export default function ChatUI2(props) {
     }, [msgFromFlag])
 
     useEffect(() => {
+
+        if (rid != '') {
+
+            setActive(rid)
+            setContacts(contacts.map(item => {
+                if (item.id == rid.id) {
+                    item.unReadMessages = 0;
+                }
+                return item;
+            }))
+            setOpen(false)
+        }
+    }, [rid])
+
+    useEffect(() => {
+        const activeUser = contacts.find(contact => (
+            contact.id == active
+        ))
+        activeUser != undefined ?
+            setActiveUserName(activeUser.name) : ''
+    }, [rid, contacts])
+
+    useEffect(() => {
         setCurrentUsers([...currentUsers, joinedUser])
     }, [joinedUser])
 
@@ -73,13 +114,13 @@ export default function ChatUI2(props) {
 
 
     return (
-        <div className="container-fluid h-100 mt-3">
+        <div className="container h-100 mt-3">
             <div className="row justify-content-center h-100">
                 <Hidden xsDown>
                     <div className="col-md-5 col-xl-4 chat">
                         <div className="card mb-sm-3 mb-md-0 contacts_card">
 
-                            <MyContext.Provider value={{ rid, setRid, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts }}>
+                            <MyContext.Provider value={{ rid, active, setActive, setRid,activeUserName, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts }}>
 
                                 <Sidebar />
 
@@ -89,6 +130,8 @@ export default function ChatUI2(props) {
                         </div>
                     </div>
                 </Hidden>
+
+
                 <div className="col-md-7 col-xl-7 chat">
                     <div className="card" style={{ position: 'relative' }}>
 
@@ -96,7 +139,7 @@ export default function ChatUI2(props) {
                             rid == '' ? <Welcome /> :
 
                                 <>
-                                    <MyContext.Provider value={{ rid, setRid, msgs, setMsgs, flag, setFlag, socketData, setsocketData, msgsCount, setMsgsCount, currentUsers, contacts, setContacts }}>
+                                    <MyContext.Provider value={{ rid, active, setRid, msgs, activeUserName,setMsgs, flag, setFlag, socketData, setsocketData, msgsCount, setMsgsCount, currentUsers, contacts, setContacts }}>
                                         <ChatBoxHeader />
                                         <ChatBoxBody />
                                         <ChatBoxFooter />
@@ -107,20 +150,21 @@ export default function ChatUI2(props) {
                     </div>
                 </div>
 
-                <MyDrawer />
+                <MyDrawer
+                    component={
 
-                {/* drawerElements={<div className="chat">
-                        <div className="card mb-sm-3 mb-md-0 contacts_card">
-
-                            <MyContext.Provider value={{ rid, setRid, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts }}>
+                        <div className="card sidebarCard mb-sm-3 mb-md-0 contacts_card" >
+                            <MyContext.Provider value={{ rid, active, setRid,activeUserName, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts }}>
 
                                 <Sidebar />
 
                             </MyContext.Provider>
-
                             <div className="card-footer" />
+
                         </div>
-                    </div>}  */}
+
+                    }
+                />
             </div>
         </div>
 

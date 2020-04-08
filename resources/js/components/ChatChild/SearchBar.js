@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import SearchIcon from '@material-ui/icons/Search';
-import { MyContext } from '../ChatUI2';
+import { MyContext } from '../ChatUI';
 
 export default function SearchBar() {
 

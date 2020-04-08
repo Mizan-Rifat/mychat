@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react'
 import SendIcon from '@material-ui/icons/Send';
-import { MyContext } from '../ChatUI2';
+import { MyContext } from '../ChatUI';
 import IconButton from '@material-ui/core/IconButton';
 import Input from '@material-ui/core/Input';
 import InputAdornment from '@material-ui/core/InputAdornment';

@@ -3,7 +3,7 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import IconButton from '@material-ui/core/IconButton';
-import { MyContext } from '../ChatUI2';
+import { MyContext } from '../ChatUI';
 
 export default function ChatBoxHeader() {
     const [anchorEl, setAnchorEl] = React.useState(null);
