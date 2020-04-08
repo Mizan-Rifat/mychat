@@ -29,7 +29,10 @@ export default function ChatUI(props) {
     const [activeUserName,setActiveUserName] = useState('');
     const history = useHistory();
 
-    
+
+    this iisdfsksdflvl,sd.
+
+
     useEffect(() => {
         const query = new URLSearchParams(props.location.search);
         const params = query.get('rid');
