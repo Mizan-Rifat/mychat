@@ -6,9 +6,7 @@ import MenuItem from '@material-ui/core/MenuItem';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
 import IconButton from '@material-ui/core/IconButton';
 import { makeStyles } from '@material-ui/core/styles';
-import VisibilitySensor from 'react-visibility-sensor';
 import Scrollbar from "react-scrollbars-custom";
-
 import CircularProgress from '@material-ui/core/CircularProgress';
 var dateFormat = require('dateformat');
 import CheckCircleOutlineRoundedIcon from '@material-ui/icons/CheckCircleOutlineRounded';
@@ -34,8 +32,10 @@ export default function ChatBoxBody(props) {
     const [typing, setTyping] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const [loading, setLoading] = useState(true)
+    const [socketData, setsocketData] = useState({})
+    const [recipientName, setRecipientName] = useState('')
 
-    const { rid, msgs, setMsgs, flag, setFlag, socketData, activeUserName, setsocketData, setMsgsCount } = useContext(MyContext);
+    const { rid, state, dispatch } = useContext(MyContext);
 
     const messagesEndRef = useRef(null)
 
@@ -44,20 +44,30 @@ export default function ChatBoxBody(props) {
     }
 
     useEffect(() => {
-        if (flag) {
+        if (state.msgsChangedflag) {
             messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
-            setFlag(false)
+            dispatch({ type: 'SET_FLAG_FALSE' })
         }
 
-    });
+    },[state.msgsChangedflag]);
+
+    // useEffect(() => {
+
+    //     messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+    //     dispatch({ type: 'SET_FLAG_FALSE' })
+
+
+    // }, []);
 
     useEffect(() => {
         if (page != 1) {
             axios.get(`/api/messages?rid=${rid}&page=${page}`)
                 .then(response => {
-                    setMsgs([...response.data.messages, ...msgs])
-                    setFlag(false)
-                    setMsgsCount(response.data.count)
+                    console.log(response)
+
+
+                    dispatch({ type: 'SET_PAGE_MSGS', payload: { msgs: response.data.messages, msgsCount: response.data.count } })
+
                     setTotalPage(Math.ceil(response.data.count / 10))
 
                 }).catch(e => {
@@ -73,11 +83,10 @@ export default function ChatBoxBody(props) {
 
         axios.get(`/api/messages?rid=${rid}&page=${page}`)
             .then(response => {
-                setMsgs([...response.data.messages])
-                setFlag(true)
+                setRecipientName(response.data.recipientName)
+                dispatch({ type: 'SET_INIT_MSGS', payload: { msgs: response.data.messages, msgsCount: response.data.count,recipientName:response.data.recipientName} })
                 setRuser(true)
                 setLoading(false)
-                setMsgsCount(response.data.count)
                 setTotalPage(Math.ceil(response.data.count / 10) == 0 ? 1 : Math.ceil(response.data.count / 10))
 
             }).catch(e => {
@@ -127,9 +136,7 @@ export default function ChatBoxBody(props) {
             let msg = {
                 ...socketData[0].message, contents: socketData[0].contents
             }
-            console.log('msg', msg)
-            setMsgs([...msgs, msg])
-            setFlag(true)
+            dispatch({ type: 'SET_SOCKET_MSGS', payload: msg })
         }
 
 
@@ -141,11 +148,11 @@ export default function ChatBoxBody(props) {
         <Scrollbar>
             {
                 loading ?
-                
-                <div className="d-flex justify-content-center align-items-center">
-                    <CircularProgress /> 
-                </div>
-                :
+
+                    <div className="d-flex justify-content-center align-items-center">
+                        <CircularProgress />
+                    </div>
+                    :
 
                     <div className="card-body msg_card_body" >
 
@@ -162,9 +169,9 @@ export default function ChatBoxBody(props) {
                                     }
 
                                     {
-                                        msgs.map((msg, index) => (
+                                        state.msgs.map((msg, index) => (
 
-                                            <SingleMsg index={index} msg={msg} showMenu={showMenu} setShowMenu={setShowMenu} msgs={msgs} setMsgs={setMsgs} activeUserName={activeUserName} sender={msg.msg_from == localStorage.getItem('userID') ? true : false} rid={rid} />
+                                            <SingleMsg index={index} msg={msg} showMenu={showMenu} setShowMenu={setShowMenu} recipientName={recipientName} sender={msg.msg_from == localStorage.getItem('userID') ? true : false} rid={rid} />
 
                                         ))
                                     }
@@ -190,7 +197,7 @@ export default function ChatBoxBody(props) {
                     </div>
             }
             <div ref={messagesEndRef} />
-
+            
         </Scrollbar>
 
 
@@ -199,7 +206,7 @@ export default function ChatBoxBody(props) {
 }
 
 
-function MsgMenuButton({ id, msgs, setMsgs }) {
+function MsgMenuButton({ id }) {
     const [anchorEl, setAnchorEl] = React.useState(null);
 
     const handleClick = event => {
@@ -217,7 +224,7 @@ function MsgMenuButton({ id, msgs, setMsgs }) {
             .then(response => {
                 console.log(response)
                 if (response.status == 200) {
-                    setMsgs(msgs.filter((msg) => msg.id != id))
+                    dispatch({ type: 'DELETE_SINGLE_MSG', payload: id })
                 }
             })
 
@@ -248,7 +255,7 @@ function MsgMenuButton({ id, msgs, setMsgs }) {
 }
 
 
-function SingleMsg({ index, msg, setShowMenu, showMenu, msgs, setMsgs, sender, rid, activeUserName }) {
+function SingleMsg({ index, msg, setShowMenu, showMenu, sender, rid, recipientName }) {
 
     return (
         <>
@@ -256,7 +263,7 @@ function SingleMsg({ index, msg, setShowMenu, showMenu, msgs, setMsgs, sender, r
                 sender ?
 
                     <div key={index} className={`d-flex justify-content-between mb-4`} onMouseEnter={() => setShowMenu(index + 1)} onMouseLeave={() => setShowMenu('')}>
-                        <div className="d-flex justify-content-start" style={{maxWidth:'300px'}}>
+                        <div className="d-flex justify-content-start" style={{ maxWidth: '300px' }}>
                             <div className="img_cont_msg" style={{ position: 'relative' }}>
                                 <img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg" className="rounded-circle user_img_msg" />
                                 <div className="doneIcon" >
@@ -297,7 +304,7 @@ function SingleMsg({ index, msg, setShowMenu, showMenu, msgs, setMsgs, sender, r
                         {
                             index + 1 == showMenu && showMenu != '' ?
                                 <div className="">
-                                    <MsgMenuButton id={msg.id} msgs={msgs} setMsgs={setMsgs} />
+                                    <MsgMenuButton id={msg.id} />
                                 </div>
                                 : <div></div>
 
@@ -314,11 +321,11 @@ function SingleMsg({ index, msg, setShowMenu, showMenu, msgs, setMsgs, sender, r
                         {
                             index + 1 == showMenu && showMenu != '' ?
                                 <div className="">
-                                    <MsgMenuButton id={msg.id} msgs={msgs} setMsgs={setMsgs} />
+                                    <MsgMenuButton id={msg.id} />
                                 </div>
                                 : <div></div>
                         }
-                        <div className="d-flex justify-content-end" style={{maxWidth:'300px'}}>
+                        <div className="d-flex justify-content-end" style={{ maxWidth: '300px' }}>
                             <div className="msg_cotainer_send">
                                 {/* {msg.msg} */}
 
@@ -351,7 +358,7 @@ function SingleMsg({ index, msg, setShowMenu, showMenu, msgs, setMsgs, sender, r
 
 
                                 <span className="msg_time_send">{dateFormat(msg.created_at, "h:MM TT, mmm d")}</span>
-                                <span className="receiver">{activeUserName.split(' ')[0]}</span>
+                                <span className="receiver">{recipientName.split(' ')[0]}</span>
                             </div>
 
                             <div className="img_cont_msg">

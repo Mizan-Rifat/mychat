@@ -13,20 +13,12 @@ export default function ContactsList() {
     // const [flag, setFlag] = useState(false);
     const [query, setQuery] = useQueryState('rid', '')
 
-    const { active,setActive,setRid, currentUsers, contacts, setContacts, setFilteredContacts } = useContext(MyContext);
+    const { setRid, currentUsers,contactState, contactDispatch } = useContext(MyContext);
     const { setOpen } = useContext(drawerContext);
 
     const handleSelect = (contact) => {
         setQuery(contact.id)
         setRid(contact.id)
-        setActive(contact.id)
-
-        setContacts(contacts.map(item => {
-            if (item.id == contact.id) {
-                item.unReadMessages = 0;
-            }
-            return item;
-        }))
         setOpen(false)
     }
 
@@ -34,9 +26,7 @@ export default function ContactsList() {
 
         axios.get('/api/allusers')
             .then(response => {
-                setContacts(response.data.users.filter(item => item.id != localStorage.getItem('userID')))
-                setFilteredContacts(response.data.users.filter(item => item.id != localStorage.getItem('userID')))
-                // setFlag(!flag)
+                contactDispatch({ type: 'SET_INIT_CONTACTS', payload: response.data.users })
             })
     }, [])
 
@@ -48,11 +38,11 @@ export default function ContactsList() {
 
                     {
 
-                        contacts.map((contact, index) => (
-                            <div to={`/chat?rid=${contact.id}`} className='contact_nav' onClick={()=>handleSelect(contact)}>
+                        contactState.contacts.map((contact, index) => (
+                            <div to={`/chat?rid=${contact.id}`} className='contact_nav' onClick={() => handleSelect(contact)}>
                                 <ListItem
                                     key={index}
-                                    className={active == contact.id ? 'active' : ''}>
+                                    className={contactState.selectedUser == contact.id ? 'active' : ''}>
 
                                     <div className="d-flex bd-highlight justify-content-between" style={{ cursor: 'pointer' }}>
                                         <div className='d-flex'>

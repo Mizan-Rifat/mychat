@@ -8,7 +8,7 @@ import { MyContext } from '../ChatUI';
 export default function ChatBoxHeader() {
     const [anchorEl, setAnchorEl] = React.useState(null);
 
-    const { rid, setMsgs, msgsCount, currentUsers, activeUserName} = useContext(MyContext);
+    const { rid,currentUsers,contactState,state,dispatch} = useContext(MyContext);
 
     const handleClick = event => {
         setAnchorEl(event.currentTarget);
@@ -23,7 +23,8 @@ export default function ChatBoxHeader() {
             id: rid
         })
             .then(response => {
-                setMsgs([]);
+                if(response.status == 200)
+                dispatch({type:'DELETE_ALL_MSGS'})
             })
         setAnchorEl(null);
     }
@@ -40,8 +41,8 @@ return (
 
             </div>
             <div className="user_info">
-                <span>Chat with {activeUserName}</span>
-                <p>{msgsCount} Messages</p>
+                <span>Chat with {state.activeUserName}</span>
+                <p>{state.msgsCount} Messages</p>
             </div>
 
         </div>

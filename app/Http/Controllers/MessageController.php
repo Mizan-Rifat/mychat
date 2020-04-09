@@ -24,7 +24,8 @@ class MessageController extends Controller
         $rid = $request->rid;
         $page = $request->page;
 
-        $recipent = User::find($rid);
+        $recipient = User::find($rid);
+        $recipientName = $recipient->name;
         $limit = 10;
 
         $ruser = User::find($rid);
@@ -34,26 +35,26 @@ class MessageController extends Controller
         }
 
         $count = DB::table('msg_tbl')
-            ->where(function ($query) use ($user, $recipent) {
+            ->where(function ($query) use ($user, $recipient) {
                 $query->where('msg_to', $user->id)
-                    ->Where('msg_from', $recipent->id)
+                    ->Where('msg_from', $recipient->id)
                     ->where('is_deleted_from_reciever', 0);
             })
-            ->orWhere((function ($query) use ($user, $recipent) {
-                $query->where('msg_to', $recipent->id)
+            ->orWhere((function ($query) use ($user, $recipient) {
+                $query->where('msg_to', $recipient->id)
                     ->Where('msg_from', $user->id)
                     ->where('is_deleted_from_sender', 0);
             }))
             ->count();
 
         $messagesQ = DB::table('msg_tbl')
-            ->where(function ($query) use ($user, $recipent) {
+            ->where(function ($query) use ($user, $recipient) {
                 $query->where('msg_to', $user->id)
-                    ->Where('msg_from', $recipent->id)
+                    ->Where('msg_from', $recipient->id)
                     ->where('is_deleted_from_reciever', 0);
             })
-            ->orWhere((function ($query) use ($user, $recipent) {
-                $query->where('msg_to', $recipent->id)
+            ->orWhere((function ($query) use ($user, $recipient) {
+                $query->where('msg_to', $recipient->id)
                     ->Where('msg_from', $user->id)
                     ->where('is_deleted_from_sender', 0);
             }))
@@ -80,13 +81,13 @@ class MessageController extends Controller
 
         $any = DB::table('msg_tbl')
             ->where('msg_to', $user->id)
-            ->Where('msg_from', $recipent->id)
+            ->Where('msg_from', $recipient->id)
             ->where('is_deleted_from_reciever', 0)
             ->where('seen', 0)
             ->update(['seen' => 1]);
 
 
-        return response()->json(['messages' => $messages, 'count' => $count]);
+        return response()->json(['messages' => $messages,'recipientName'=>$recipientName,'count' => $count]);
     }
 
 
@@ -147,7 +148,7 @@ class MessageController extends Controller
         $message = $newMsg::with('contents')->where('id', $newMsg->id)->get();
 
 
-        event(new ChatEvent($message, $request->msg_to));
+        broadcast(new ChatEvent($message, $request->msg_to))->toOthers();
 
         event(new NewEvent($user->id, $request->msg_to));
 

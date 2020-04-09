@@ -8,7 +8,10 @@ import { useHistory } from 'react-router-dom'
 import Welcome from './Welcome';
 import MyDrawer from './MyDrawer'
 import { drawerContext } from './App'
+import messageReducer from './Reducers/MessageReducer'
+import contactsReducer from './Reducers/ContactsReducer'
 export const MyContext = createContext();
+
 
 export default function ChatUI(props) {
 
@@ -17,7 +20,6 @@ export default function ChatUI(props) {
     const [msgs, setMsgs] = useState([]);
     const [msgsCount, setMsgsCount] = useState('');
     const [flag, setFlag] = useState(true);
-    const [socketData, setsocketData] = useState({});
     const [active, setActive] = useState('');
     const [currentUsers, setCurrentUsers] = useState([])
     const [joinedUser, setJoinedUser] = useState({})
@@ -26,12 +28,29 @@ export default function ChatUI(props) {
     const [filteredContacts, setFilteredContacts] = useState([]);
     const [msgFrom, setMsgFrom] = useState('');
     const [msgFromFlag, setMsgFromFlag] = useState('');
-    const [activeUserName,setActiveUserName] = useState('');
+    const [activeUserName, setActiveUserName] = useState('');
     const history = useHistory();
 
+    const initMsgState = {
+        msgs: [],
+        msgsCount: '',
+        msgsChangedflag: false,
+        activeUserName:''
 
-    this iisdfsksdflvl,sd.
+    }
+    const initContactState = {
+        contacts: [],
+        initContacts: [],
+        currentUsers: [],
+        joinedUser: {},
+        leavedUser: {},
+        selectedUser: ''
 
+    }
+
+
+    const [state, dispatch] = useReducer(messageReducer, initMsgState);
+    const [contactState, contactDispatch] = useReducer(contactsReducer, initContactState);
 
     useEffect(() => {
         const query = new URLSearchParams(props.location.search);
@@ -48,6 +67,11 @@ export default function ChatUI(props) {
                 }
             })
 
+        axios.get('/api/allusers')
+            .then(response => {
+                contactDispatch({ type: 'SET_INIT_CONTACTS', payload: response.data.users })
+            })
+
     }, [])
 
 
@@ -62,7 +86,8 @@ export default function ChatUI(props) {
             .joining((user) => {
                 setJoinedUser(user)
             })
-            .leaving((user) => {`   `
+            .leaving((user) => {
+                `   `
 
                 setLeavedUser(user)
             })
@@ -83,27 +108,12 @@ export default function ChatUI(props) {
     }, [msgFromFlag])
 
     useEffect(() => {
-
         if (rid != '') {
-
-            setActive(rid)
-            setContacts(contacts.map(item => {
-                if (item.id == rid.id) {
-                    item.unReadMessages = 0;
-                }
-                return item;
-            }))
+            contactDispatch({ type: 'SET_SELECTED_USER', payload: rid })
             setOpen(false)
         }
     }, [rid])
 
-    useEffect(() => {
-        const activeUser = contacts.find(contact => (
-            contact.id == active
-        ))
-        activeUser != undefined ?
-            setActiveUserName(activeUser.name) : ''
-    }, [rid, contacts])
 
     useEffect(() => {
         setCurrentUsers([...currentUsers, joinedUser])
@@ -123,7 +133,7 @@ export default function ChatUI(props) {
                     <div className="col-md-5 col-xl-4 chat">
                         <div className="card mb-sm-3 mb-md-0 contacts_card">
 
-                            <MyContext.Provider value={{ rid, active, setActive, setRid,activeUserName, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts }}>
+                            <MyContext.Provider value={{ rid, active, setActive, setRid, activeUserName, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts, contactState, contactDispatch }}>
 
                                 <Sidebar />
 
@@ -142,7 +152,7 @@ export default function ChatUI(props) {
                             rid == '' ? <Welcome /> :
 
                                 <>
-                                    <MyContext.Provider value={{ rid, active, setRid, msgs, activeUserName,setMsgs, flag, setFlag, socketData, setsocketData, msgsCount, setMsgsCount, currentUsers, contacts, setContacts }}>
+                                    <MyContext.Provider value={{ rid, active, setRid, msgs, activeUserName, setMsgs, flag, setFlag, msgsCount, setMsgsCount, currentUsers, state, dispatch,contactState}}>
                                         <ChatBoxHeader />
                                         <ChatBoxBody />
                                         <ChatBoxFooter />
@@ -157,7 +167,7 @@ export default function ChatUI(props) {
                     component={
 
                         <div className="card sidebarCard mb-sm-3 mb-md-0 contacts_card" >
-                            <MyContext.Provider value={{ rid, active, setRid,activeUserName, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts }}>
+                            <MyContext.Provider value={{ rid, active, setRid, activeUserName, currentUsers, contacts, setContacts, filteredContacts, setFilteredContacts }}>
 
                                 <Sidebar />
 

@@ -16,7 +16,7 @@ function ChatBoxFooter() {
     const [attachments, setAttachments] = useState([])
     const [picker, setPicker] = useState(false);
 
-    const { msgs, setMsgs, rid, flag, setFlag } = useContext(MyContext);
+    const {rid,dispatch} = useContext(MyContext);
 
     const handleSend = () => {
 
@@ -38,9 +38,8 @@ function ChatBoxFooter() {
         }
 
         axios.post('/api/sendmessage', formData, config).then(response => {
-            // console.log(response.data.message[0])
-            setMsgs([...msgs, response.data.message[0]])
-            setFlag(!flag)
+           
+            dispatch({type:'ADD_SINGLE_MSG',payload:response.data.message[0]})
 
         })
         setMessage('')
