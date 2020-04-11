@@ -28,6 +28,7 @@ export default function ChatBoxBody(props) {
 
     const [page, setPage] = useState(1);
     const [ruser, setRuser] = useState(false);
+    const [flag, setFlag] = useState(true);
     const [totalPage, setTotalPage] = useState('');
     const [typing, setTyping] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
@@ -44,12 +45,14 @@ export default function ChatBoxBody(props) {
     }
 
     useEffect(() => {
-        if (state.msgsChangedflag) {
+        console.log('lll')
+        if (flag) {
             messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
-            dispatch({ type: 'SET_FLAG_FALSE' })
+            // dispatch({ type: 'SET_FLAG_FALSE' })
+            setFlag(false)
         }
 
-    },[state.msgsChangedflag]);
+    },[state.msgs]);
 
     // useEffect(() => {
 
@@ -80,12 +83,13 @@ export default function ChatBoxBody(props) {
     }, [page])
 
     useEffect(() => {
-
+console.log('yeag')
         axios.get(`/api/messages?rid=${rid}&page=${page}`)
             .then(response => {
                 setRecipientName(response.data.recipientName)
                 dispatch({ type: 'SET_INIT_MSGS', payload: { msgs: response.data.messages, msgsCount: response.data.count,recipientName:response.data.recipientName} })
                 setRuser(true)
+                setFlag(true)
                 setLoading(false)
                 setTotalPage(Math.ceil(response.data.count / 10) == 0 ? 1 : Math.ceil(response.data.count / 10))
 

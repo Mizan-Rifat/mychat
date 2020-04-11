@@ -34,7 +34,7 @@ export default function ChatUI(props) {
     const initMsgState = {
         msgs: [],
         msgsCount: '',
-        msgsChangedflag: false,
+        msgsChangedflag: true,
         activeUserName:''
 
     }
