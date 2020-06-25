@@ -26,7 +26,8 @@ class MessageController extends Controller
 
         $recipient = User::find($rid);
         $recipientName = $recipient->name;
-        $limit = 10;
+        $initLimit = 10;
+        $limit=10;
 
         $ruser = User::find($rid);
 
@@ -47,6 +48,25 @@ class MessageController extends Controller
             }))
             ->count();
 
+            if($count / $page < $limit){
+                $limit = $count % $limit;
+            }
+
+        $limitedCount = DB::table('msg_tbl')
+            ->where(function ($query) use ($user, $recipient) {
+                $query->where('msg_to', $user->id)
+                    ->Where('msg_from', $recipient->id)
+                    ->where('is_deleted_from_reciever', 0);
+            })
+            ->orWhere((function ($query) use ($user, $recipient) {
+                $query->where('msg_to', $recipient->id)
+                    ->Where('msg_from', $user->id)
+                    ->where('is_deleted_from_sender', 0);
+            }))
+            // ->skip($count - ($limit * $page))
+            ->take($count - ($limit * $page))
+            ->get();
+
         $messagesQ = DB::table('msg_tbl')
             ->where(function ($query) use ($user, $recipient) {
                 $query->where('msg_to', $user->id)
@@ -58,8 +78,8 @@ class MessageController extends Controller
                     ->Where('msg_from', $user->id)
                     ->where('is_deleted_from_sender', 0);
             }))
-            ->offset($count - ($limit * $page))
-            ->limit($limit)
+            ->skip($count - ($initLimit * $page))
+            ->take($limit)
             ->get();
 
 
@@ -67,7 +87,12 @@ class MessageController extends Controller
             // return MessageModel::find($msg->id)->image;
             $contents = MessageModel::find($msg->id)->contents;
             $msg->contents = $contents->map(function ($content) {
-                $a['content'] = $content->content;
+                if($content->format == 'image'){
+                    $a['content'] = asset('storage/pics/'.$content->content);    
+                }else{
+                    $a['content'] = $content->content;
+                }
+                
                 $a['format'] = $content->format;
                 return $a;
             });
@@ -87,7 +112,7 @@ class MessageController extends Controller
             ->update(['seen' => 1]);
 
 
-        return response()->json(['messages' => $messages,'recipientName'=>$recipientName,'count' => $count]);
+        return response()->json(['messages' => $messages,'recipientName'=>$recipientName,'count' => $count,'lc'=>$limitedCount]);
     }
 
 

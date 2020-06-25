@@ -17,8 +17,9 @@ Route::get('/login/github/callback', 'Auth\LoginController@handleProviderCallbac
 
 Route::view('/{path?}', 'main');
 // Route::get('/', function () {
-//     return view('main');
+//     return view('home');
 // });
+Route::post('stripe', 'HomeController@paymentProcess')->name('stripe.post');
 
 Auth::routes();
 

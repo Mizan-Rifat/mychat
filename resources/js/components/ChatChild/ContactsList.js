@@ -11,13 +11,14 @@ import ListItem from '@material-ui/core/ListItem';
 export default function ContactsList() {
 
     // const [flag, setFlag] = useState(false);
-    const [query, setQuery] = useQueryState('rid', '')
+    const [query, setQuery] = useQueryState('rid', 'gh')
 
     const { setRid, currentUsers,contactState, contactDispatch } = useContext(MyContext);
     const { setOpen } = useContext(drawerContext);
 
     const handleSelect = (contact) => {
-        setQuery(contact.id)
+        // setQuery(contact.id)
+        setQuery('a pushed value', { method: 'push' })
         setRid(contact.id)
         setOpen(false)
     }
@@ -39,7 +40,7 @@ export default function ContactsList() {
                     {
 
                         contactState.contacts.map((contact, index) => (
-                            <div to={`/chat?rid=${contact.id}`} className='contact_nav' onClick={() => handleSelect(contact)}>
+                            <div to={`/chat?rid=${contact.id}`} className='contact_nav' key={index} onClick={() => handleSelect(contact)}>
                                 <ListItem
                                     key={index}
                                     className={contactState.selectedUser == contact.id ? 'active' : ''}>

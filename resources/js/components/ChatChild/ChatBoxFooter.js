@@ -10,13 +10,15 @@ import { Picker } from 'emoji-mart'
 import Badge from '@material-ui/core/Badge';
 import ImageIcon from '@material-ui/icons/Image';
 
+import Chip from '@material-ui/core/Chip';
+
 function ChatBoxFooter() {
 
     const [message, setMessage] = useState('')
     const [attachments, setAttachments] = useState([])
     const [picker, setPicker] = useState(false);
 
-    const {rid,dispatch} = useContext(MyContext);
+    const { rid, dispatch,typing} = useContext(MyContext);
 
     const handleSend = () => {
 
@@ -33,13 +35,13 @@ function ChatBoxFooter() {
         }
 
         for (let i = 0; i < attachments.length; i++) {
-            formData.append('content[]',attachments[i] );
+            formData.append('content[]', attachments[i]);
             formData.append('format', 'image')
         }
 
         axios.post('/api/sendmessage', formData, config).then(response => {
-           
-            dispatch({type:'ADD_SINGLE_MSG',payload:response.data.message[0]})
+
+            dispatch({ type: 'ADD_SINGLE_MSG', payload: response.data.message[0] })
 
         })
         setMessage('')
@@ -89,6 +91,15 @@ function ChatBoxFooter() {
 
     return (
         <div className="card-footer">
+            <div className="d-flex justify-content-center" style={{ position: 'absolute', left: '50%', right: '50%',bottom:'100px' }}>
+                {
+                    typing ?
+                        <small><Chip label="Typing..." color='primary' /></small>
+                        : ''
+                }
+            </div>
+
+
             <div style={{ display: 'flex', overflowY: 'auto' }}>
 
                 {
@@ -123,13 +134,13 @@ function ChatBoxFooter() {
                             id="icon-button-file"
                             style={{ display: 'none', }}
                             onChange={handleUploadChange}
-                            
+
                         />
                         <label htmlFor="icon-button-file" style={{ margin: 0 }}>
                             <IconButton
                                 variant="contained"
                                 component="span"
-                                size="large"
+                                size="medium"
                             >
                                 <ImageIcon />
                             </IconButton>

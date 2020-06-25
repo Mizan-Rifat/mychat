@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 
 class HomeController extends Controller
 {
@@ -27,9 +28,9 @@ class HomeController extends Controller
      *
      * @return \Illuminate\Contracts\Support\Renderable
      */
-    public function index($msg)
-    {
-
+    public function test()
+    { 
+    return asset('pics/cSecYm5uR3lYsi28YJdoJSj9wGHIAsDzmUpnAZN1.jpeg');
     }
 
     public function check()
@@ -44,41 +45,76 @@ class HomeController extends Controller
 
 
     // SELECT * FROM `msg_tbl` INNER JOIN msg_image_tbl ON msg_tbl.id = msg_image_tbl.msg_id WHERE msg_tbl.id = 1
-    public function test()
+    public function test1(Request $request)
     {
 
-       
+        collect($request)->map(function ($item) {
+            if ($item['id'] != 1) {
+                $id = DB::table('categories')
+                    ->insertGetId([
+                        'image' => $item['image_url'],
+                        'display_mode' => $item['display_mode']
+                    ]);
 
-        // return DB::table('msg_tbl')
-        //     ->where(function ($query){
-        //         $query->where('msg_to', 1)
-        //             ->Where('msg_from', 2)
-        //             ->where('is_deleted_from_reciever', 0);
-        //     })
-        //     ->orWhere((function ($query){
-        //         $query->where('msg_to', 2)
-        //             ->Where('msg_from', 1)
-        //             ->where('is_deleted_from_sender', 0);
-        //     }))
-        //     ->offset(0)
-        //     // ->limit(0)
-        //     ->get();
+                DB::table('category_translations')
+                    ->insert([
+                        'name' => $item['name'],
+                        'slug' => $item['slug'],
+                        'description' => $item['description'],
+                        'category_id' => $id
 
-        DB::table('msg_tbl')->truncate();
-        DB::table('msg_content_tbl')->truncate();
+                    ]);
+                collect([11, 23, 24, 25])->map(function ($no) use ($id) {
+                    DB::table('category_filterable_attributes')
+                        ->insert([
+
+                            'category_id' => $id,
+                            'attribute_id' => $no
+
+                        ]);
+                });
+            }
+        });
+
+
+
+
+
+
+        // DB::table('msg_tbl')->truncate();
+        // DB::table('msg_content_tbl')->truncate();
     }
 
-    public function unSeenMessages($user){
-        return $user->received_messages->filter(function($msg){
+    public function unSeenMessages($user)
+    {
+        return $user->received_messages->filter(function ($msg) {
             return $msg->seen == 0;
         });
     }
-    public function unSeenMessagesCount($user,$rid){
-        return count($this->unSeenMessages($user)->filter(function($msg) use($rid){
-            return $msg->msg_from == $rid; 
+    public function unSeenMessagesCount($user, $rid)
+    {
+        return count($this->unSeenMessages($user)->filter(function ($msg) use ($rid) {
+            return $msg->msg_from == $rid;
         }));
     }
-    public function unSeenMessageSenders($user){
+    public function unSeenMessageSenders($user)
+    {
         return $this->unSeenMessages($user)->pluck('msg_from')->unique();
+    }
+
+    public function paymentProcess(Request $request){
+        \Stripe\Stripe::setApiKey('sk_test_51GuKLVDkImmDuu4ZA2x6pl0MaKWPTg0UeaVtFUxJEEjXuy3S6QyOfkGZno9mSv2HqBn1GqHDIjvjUOlzstpXm4kD00gK6lu955');
+        $token = $request->stripeToken;
+
+        $charge = \Stripe\Charge::create([
+            'amount'=>10000,
+            'currency' => 'usd',
+            'description' => 'Example Charge',
+            'source'=>$token
+        ]);
+        
+
+        Session::flash('success', 'Payment successful!');
+          
     }
 }

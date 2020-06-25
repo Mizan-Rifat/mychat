@@ -11,9 +11,6 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 var dateFormat = require('dateformat');
 import CheckCircleOutlineRoundedIcon from '@material-ui/icons/CheckCircleOutlineRounded';
 
-
-
-
 const useStyles = makeStyles(theme => ({
     msgBody: {
         '&:hover': {
@@ -28,15 +25,14 @@ export default function ChatBoxBody(props) {
 
     const [page, setPage] = useState(1);
     const [ruser, setRuser] = useState(false);
-    const [flag, setFlag] = useState(true);
     const [totalPage, setTotalPage] = useState('');
-    const [typing, setTyping] = useState(false);
+    // const [typing, setTyping] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const [loading, setLoading] = useState(true)
     const [socketData, setsocketData] = useState({})
     const [recipientName, setRecipientName] = useState('')
 
-    const { rid, state, dispatch } = useContext(MyContext);
+    const { rid,typing,setTyping, state, dispatch } = useContext(MyContext);
 
     const messagesEndRef = useRef(null)
 
@@ -45,29 +41,20 @@ export default function ChatBoxBody(props) {
     }
 
     useEffect(() => {
-        console.log('lll')
-        if (flag) {
+        if (state.msgsChangedflag && messagesEndRef.current != null) {
+            
             messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
-            // dispatch({ type: 'SET_FLAG_FALSE' })
-            setFlag(false)
+            dispatch({ type: 'SET_FLAG_FALSE' })
         }
 
-    },[state.msgs]);
+    });
 
-    // useEffect(() => {
-
-    //     messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
-    //     dispatch({ type: 'SET_FLAG_FALSE' })
-
-
-    // }, []);
 
     useEffect(() => {
         if (page != 1) {
             axios.get(`/api/messages?rid=${rid}&page=${page}`)
                 .then(response => {
                     console.log(response)
-
 
                     dispatch({ type: 'SET_PAGE_MSGS', payload: { msgs: response.data.messages, msgsCount: response.data.count } })
 
@@ -83,13 +70,12 @@ export default function ChatBoxBody(props) {
     }, [page])
 
     useEffect(() => {
-console.log('yeag')
         axios.get(`/api/messages?rid=${rid}&page=${page}`)
             .then(response => {
                 setRecipientName(response.data.recipientName)
+
                 dispatch({ type: 'SET_INIT_MSGS', payload: { msgs: response.data.messages, msgsCount: response.data.count,recipientName:response.data.recipientName} })
                 setRuser(true)
-                setFlag(true)
                 setLoading(false)
                 setTotalPage(Math.ceil(response.data.count / 10) == 0 ? 1 : Math.ceil(response.data.count / 10))
 
@@ -153,11 +139,11 @@ console.log('yeag')
             {
                 loading ?
 
-                    <div className="d-flex justify-content-center align-items-center">
-                        <CircularProgress />
+                    <div className="d-flex justify-content-center align-items-center mt-5" style={{color:'#7F81D6'}}>
+                        <CircularProgress color='inherit' />
                     </div>
                     :
-
+<>
                     <div className="card-body msg_card_body" >
 
 
@@ -175,18 +161,23 @@ console.log('yeag')
                                     {
                                         state.msgs.map((msg, index) => (
 
-                                            <SingleMsg index={index} msg={msg} showMenu={showMenu} setShowMenu={setShowMenu} recipientName={recipientName} sender={msg.msg_from == localStorage.getItem('userID') ? true : false} rid={rid} />
+                                            <SingleMsg key={index} index={index} msg={msg} showMenu={showMenu} setShowMenu={setShowMenu} recipientName={recipientName} sender={msg.msg_from == localStorage.getItem('userID') ? true : false} rid={rid} />
 
                                         ))
                                     }
 
-                                    <div className="d-flex justify-content-center" style={{ position: 'absolute', left: '50%', right: '50%' }}>
-                                        {
-                                            typing ?
-                                                <small><Chip label="Typing..." color='primary' /></small>
-                                                : ''
-                                        }
-                                    </div>
+                                    
+
+
+
+
+
+
+
+
+                                    
+
+                                    <div ref={messagesEndRef} />
 
 
                                 </>
@@ -199,8 +190,10 @@ console.log('yeag')
 
                         }
                     </div>
+                    
+                    </>
             }
-            <div ref={messagesEndRef} />
+            
             
         </Scrollbar>
 

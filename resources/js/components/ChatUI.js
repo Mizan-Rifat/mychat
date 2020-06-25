@@ -29,6 +29,7 @@ export default function ChatUI(props) {
     const [msgFrom, setMsgFrom] = useState('');
     const [msgFromFlag, setMsgFromFlag] = useState('');
     const [activeUserName, setActiveUserName] = useState('');
+    const [typing, setTyping] = useState(false);
     const history = useHistory();
 
     const initMsgState = {
@@ -152,7 +153,7 @@ export default function ChatUI(props) {
                             rid == '' ? <Welcome /> :
 
                                 <>
-                                    <MyContext.Provider value={{ rid, active, setRid, msgs, activeUserName, setMsgs, flag, setFlag, msgsCount, setMsgsCount, currentUsers, state, dispatch,contactState}}>
+                                    <MyContext.Provider value={{ rid, active, setRid, msgs, activeUserName, setMsgs, flag, setFlag, msgsCount, setMsgsCount, currentUsers, state, dispatch,contactState,typing, setTyping}}>
                                         <ChatBoxHeader />
                                         <ChatBoxBody />
                                         <ChatBoxFooter />
