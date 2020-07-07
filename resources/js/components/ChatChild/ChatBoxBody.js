@@ -1,372 +1,460 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
-import { MyContext } from '../ChatUI';
-import Chip from '@material-ui/core/Chip';
-import Menu from '@material-ui/core/Menu';
-import MenuItem from '@material-ui/core/MenuItem';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
-import IconButton from '@material-ui/core/IconButton';
-import { makeStyles } from '@material-ui/core/styles';
+import React, { useState, useEffect, useContext, useRef } from "react";
+import { MyContext } from "../ChatUI";
+import Chip from "@material-ui/core/Chip";
+import Menu from "@material-ui/core/Menu";
+import MenuItem from "@material-ui/core/MenuItem";
+import MoreVertIcon from "@material-ui/icons/MoreVert";
+import IconButton from "@material-ui/core/IconButton";
+import { makeStyles } from "@material-ui/core/styles";
 import Scrollbar from "react-scrollbars-custom";
-import CircularProgress from '@material-ui/core/CircularProgress';
-var dateFormat = require('dateformat');
-import CheckCircleOutlineRoundedIcon from '@material-ui/icons/CheckCircleOutlineRounded';
+import CircularProgress from "@material-ui/core/CircularProgress";
+import dateFormat from "dateformat";
+import CheckCircleOutlineRoundedIcon from "@material-ui/icons/CheckCircleOutlineRounded";
+import axios from "axios";
+import { useHistory } from "react-router-dom";
+import echo from "../LaravelEcho";
+import VisibilitySensor from "react-visibility-sensor";
+import { Button } from "@material-ui/core";
+import Lightbox from 'react-image-lightbox';
+import 'react-image-lightbox/style.css';
 
-const useStyles = makeStyles(theme => ({
-    msgBody: {
-        '&:hover': {
-            background: "#f00",
-        },
+
+
+const useStyles = makeStyles((theme) => ({
+  msgBody: {
+    "&:hover": {
+      background: "#f00",
+    },
+  },
+ 
+}));
+export default function ChatBoxBody({listenerState,listenerDispatch}) {
+
+  const classes = useStyles();
+
+  const sound = new Audio('/uploads/audio/1.mp3')
+  const [ruser, setRuser] = useState(true);
+  const [initLoading, setInitLoading] = useState(true);
+  
+
+  
+
+  const [currentChannel, setCurrentChannel] = useState(0);
+
+  const { rid, messageState, messageDispatch, user, contactState,contactDispatch} = useContext(
+    MyContext
+  );
+
+  const messagesEndRef = useRef();
+
+  const loadMore = () => {
+    axios
+      .get(messageState.next)
+      .then((response) => {
+        console.log(response);
+        messageDispatch({
+          type: "SET_PAGE_MSGS",
+          payload: {
+            data: response.data.data.reverse(),
+            meta: response.data.meta,
+            links: response.data.links,
+          },
+        });
+      })
+      .catch((e) => {
+        // if (e.response.status == 401) {
+        //     history.push('/')
+        // }
+      });
+  };
+
+  const onChange = (isVisible) => {
+    if (isVisible) {
+      console.log("visible");
+      listenerDispatch({
+        type : 'SET_VISIBILITY',
+        payload : true
+    })
+    } else {
+      console.log("not_visible");
+      listenerDispatch({
+          type : 'SET_VISIBILITY',
+          payload : false
+      })
     }
-}))
-export default function ChatBoxBody(props) {
-
-    // const query = new URLSearchParams(props.location.search);
-    const classes = useStyles();
-
-    const [page, setPage] = useState(1);
-    const [ruser, setRuser] = useState(false);
-    const [totalPage, setTotalPage] = useState('');
-    // const [typing, setTyping] = useState(false);
-    const [showMenu, setShowMenu] = useState(false);
-    const [loading, setLoading] = useState(true)
-    const [socketData, setsocketData] = useState({})
-    const [recipientName, setRecipientName] = useState('')
-
-    const { rid,typing,setTyping, state, dispatch } = useContext(MyContext);
-
-    const messagesEndRef = useRef(null)
-
-    const loadMore = () => {
-        setPage(page + 1)
-    }
-
-    useEffect(() => {
-        if (state.msgsChangedflag && messagesEndRef.current != null) {
-            
-            messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
-            dispatch({ type: 'SET_FLAG_FALSE' })
-        }
-
-    });
+  };
 
 
-    useEffect(() => {
-        if (page != 1) {
-            axios.get(`/api/messages?rid=${rid}&page=${page}`)
-                .then(response => {
-                    console.log(response)
-
-                    dispatch({ type: 'SET_PAGE_MSGS', payload: { msgs: response.data.messages, msgsCount: response.data.count } })
-
-                    setTotalPage(Math.ceil(response.data.count / 10))
-
-                }).catch(e => {
-                    if (e.response.status == 401) {
-                        history.push('/')
-                    }
-                })
-        }
-
-    }, [page])
-
-    useEffect(() => {
-        axios.get(`/api/messages?rid=${rid}&page=${page}`)
-            .then(response => {
-                setRecipientName(response.data.recipientName)
-
-                dispatch({ type: 'SET_INIT_MSGS', payload: { msgs: response.data.messages, msgsCount: response.data.count,recipientName:response.data.recipientName} })
-                setRuser(true)
-                setLoading(false)
-                setTotalPage(Math.ceil(response.data.count / 10) == 0 ? 1 : Math.ceil(response.data.count / 10))
-
-            }).catch(e => {
-                if (e.response.status == 401) {
-                    history.push('/')
-                }
-                if (e.response.status == 404) {
-                    setRuser(false)
-                }
-            })
-
-    }, [rid])
-
-
-    useEffect(() => {
-
-        !loading ?
-
-            window.Echo.private(`chat.${Math.min(parseInt(rid), parseInt(localStorage.getItem('userID')))}.${Math.max(parseInt(rid), parseInt(localStorage.getItem('userID')))}`)
-                .listen('ChatEvent', function (data) {
-
-                    setsocketData([data])
-                    console.log(data);
-
-                    if (data.message.msg_to == localStorage.getItem('userID')) {
-                        axios.post('/api/setseen', {
-                            id: data.message.id
-                        })
-                    }
-
-                })
-                .listenForWhisper('typing', (e) => {
-                    setTyping(true);
-                    console.log('typing')
-                })
-                .listenForWhisper('notTyping', (e) => {
-
-                    setTyping(false);
-                })
-
-            : ''
-
-
-    }, [loading])
-    useEffect(() => {
-        if (socketData.length > 0) {
-            let msg = {
-                ...socketData[0].message, contents: socketData[0].contents
-            }
-            dispatch({ type: 'SET_SOCKET_MSGS', payload: msg })
-        }
-
-
-    }, [socketData])
-
-    return (
-
-
-        <Scrollbar>
-            {
-                loading ?
-
-                    <div className="d-flex justify-content-center align-items-center mt-5" style={{color:'#7F81D6'}}>
-                        <CircularProgress color='inherit' />
-                    </div>
-                    :
-<>
-                    <div className="card-body msg_card_body" >
-
-
-                        {
-                            ruser ?
-
-                                <>
-                                    {
-                                        page != totalPage ?
-                                            <div className="d-flex justify-content-center">
-                                                <Chip label="Load More" color='primary' onClick={loadMore} />
-                                            </div> : ''
-                                    }
-
-                                    {
-                                        state.msgs.map((msg, index) => (
-
-                                            <SingleMsg key={index} index={index} msg={msg} showMenu={showMenu} setShowMenu={setShowMenu} recipientName={recipientName} sender={msg.msg_from == localStorage.getItem('userID') ? true : false} rid={rid} />
-
-                                        ))
-                                    }
-
-                                    
-
-
-
-
-
-
-
-
-                                    
-
-                                    <div ref={messagesEndRef} />
-
-
-                                </>
-                                :
-
-
-                                <div className="d-flex justify-content-center align-items-center">
-                                    <p style={{ fontSize: '25px', color: 'rgba(150, 6, 6, 0.87)' }}>No User Found</p>
-                                </div>
-
-                        }
-                    </div>
-                    
-                    </>
-            }
-            
-            
-        </Scrollbar>
-
-
-
-    )
-}
-
-
-function MsgMenuButton({ id }) {
-    const [anchorEl, setAnchorEl] = React.useState(null);
-
-    const handleClick = event => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleClose = () => {
-
-        setAnchorEl(null);
-    };
-    const handleDelete = () => {
-        axios.post('/api/deletemessage', {
-            id
+  useEffect(() => {
+    listenerDispatch({
+      type : 'INIT_STATE'
+    })
+    axios
+      .get(`/api/messages?rid=${rid}`)
+      .then((response) => {
+        // console.log(response.data.data.reverse());
+        messageDispatch({
+          type: "SET_INIT_MSGS",
+          payload: {
+            data: response.data.data.reverse(),
+            meta: response.data.meta,
+            links: response.data.links,
+          },
+        });
+        setInitLoading(false);
+        setRuser(true);
+        listenerDispatch({
+            type : 'INIT_SCROLL'
         })
-            .then(response => {
-                console.log(response)
-                if (response.status == 200) {
-                    dispatch({ type: 'DELETE_SINGLE_MSG', payload: id })
-                }
+      })
+      .catch((e) => {
+        console.log(e)
+        setInitLoading(false);
+        if (e.response.status == 404) {
+            setRuser(false);
+            
+        }
+      });
+  }, [rid]);
+
+  useEffect(() => {
+
+
+    if (!initLoading) {
+
+      window.Echo.leaveChannel(`private-chat.${Math.min(parseInt(currentChannel), user.user.id)}.${Math.max(
+        parseInt(currentChannel),
+        user.user.id
+      )}`)
+
+
+      setCurrentChannel(rid)
+
+      window.Echo
+        .private(
+          `chat.${Math.min(parseInt(rid), user.user.id)}.${Math.max(
+            parseInt(rid),
+            user.user.id
+          )}`
+        )
+        .listen("ChatEvent", function (data) {
+          if (data[0].msg_to == user.user.id) {
+
+            messageDispatch({
+              type: "SET_SOCKET_MSGS",
+              payload: data[0],
+            });
+
+            console.log('dsfdsf',rid)
+
+            // contactDispatch({
+            //   type:'CLEAN_UNREAD_MESSAGE',
+            //   payload:rid
+            // })
+
+            listenerDispatch({
+                type:'INCOMING_MESSAGE'
             })
+            sound.play();
+            
+            axios.post(`/api/setseen`, {
+              id: data[0].id,
+            });
+          }
+        })
+        .listenForWhisper("typing", (e) => {
+            listenerDispatch({
+                type:'SET_TYPING',
+                payload : true
 
-        setAnchorEl(null);
-    };
-    return (
-        <div>
-            <IconButton
-                aria-label="more"
-                aria-controls="long-menu"
-                aria-haspopup="true"
-                onClick={handleClick}
-                style={{ padding: 0, marginTop: '10px' }}
-            >
-                <MoreVertIcon />
-            </IconButton>
-            <Menu
-                id="simple-menu"
-                anchorEl={anchorEl}
-                keepMounted
-                open={Boolean(anchorEl)}
-                onClose={handleClose}
-            >
-                <MenuItem onClick={handleDelete}>Delete</MenuItem>
-            </Menu>
+            })
+        //   setIsTyping(true);
+        //   console.log("typing");
+        })
+        .listenForWhisper("notTyping", (e) => {
+            listenerDispatch({
+                type:'SET_TYPING',
+                payload : false
+
+            })
+        });
+    }
+  }, [initLoading,rid]);
+
+  useEffect(() => {
+
+    if (listenerState.scroll) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+    
+  }, [listenerState]);
+
+
+  return (
+    <Scrollbar>
+      {initLoading ? (
+        <div className="d-flex justify-content-center align-items-center" style={{height:'100px'}}>
+          <CircularProgress style={{color:'darkblue'}} />
         </div>
-    )
-}
-
-
-function SingleMsg({ index, msg, setShowMenu, showMenu, sender, rid, recipientName }) {
-
-    return (
+      ) : (
         <>
-            {
-                sender ?
+          <div className="card-body msg_card_body">
+            {ruser ? (
+              <>
+                {messageState.next != null && (
+                  <div className="d-flex justify-content-center">
+                    <Chip
+                      style={{ background: "darkmagenta" }}
+                      label="Load More"
+                      color="primary"
+                      onClick={loadMore}
+                    />
+                  </div>
+                )}
 
-                    <div key={index} className={`d-flex justify-content-between mb-4`} onMouseEnter={() => setShowMenu(index + 1)} onMouseLeave={() => setShowMenu('')}>
-                        <div className="d-flex justify-content-start" style={{ maxWidth: '300px' }}>
-                            <div className="img_cont_msg" style={{ position: 'relative' }}>
-                                <img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg" className="rounded-circle user_img_msg" />
-                                <div className="doneIcon" >
-                                    <CheckCircleOutlineRoundedIcon fontSize='inherit' />
-                                </div>
-                            </div>
+                {messageState.msgs.map((msg, index) =>
+                  index == messageState.msgs.length - 6 ? (
+                    <VisibilitySensor onChange={onChange} offset={{ top: -400,}}>
+                      <SingleMsg
+                        key={index}
+                        index={index}
+                        msg={msg}
+                        selectedUser={contactState.selectedUser}
+                        sender={msg.msg_from == user.user.id ? true : false}
+                        dispatch={messageDispatch}
+                      />
+                      
+                    </VisibilitySensor>
+                  ) : (
+                    <SingleMsg
+                      key={index}
+                      index={index}
+                      msg={msg}
+                      selectedUser={contactState.selectedUser}
+                      sender={msg.msg_from == user.user.id ? true : false}
+                      dispatch={messageDispatch}
+                    />
+                  )
+                )}
 
-                            <div className="msg_cotainer" style={{ display: 'grid' }}>
-                                {
-                                    msg.contents[0].format == 'text' ?
-                                        <div className='text_container'>
-                                            {msg.contents[0].content}
-                                        </div> : ''
-                                }
-
-                                {
-                                    msg.contents[0].format == 'image' ?
-                                        <div className='img_container d-flex' >
-                                            {
-                                                msg.contents.map(item => (
-
-                                                    <img src={`/storage/pics/${item.content}`} className='img' />
-
-                                                ))
-                                            }
-                                        </div>
-
-                                        : ''
-
-                                }
-
-                                <span className="msg_time">{dateFormat(msg.created_at, "h:MM TT, mmm d")}</span>
-
-                                <span className="sender">Me</span>
-                            </div>
-
-                        </div>
-                        {
-                            index + 1 == showMenu && showMenu != '' ?
-                                <div className="">
-                                    <MsgMenuButton id={msg.id} />
-                                </div>
-                                : <div></div>
-
-                        }
-
-                    </div >
-
-
-                    :
-
-
-
-                    <div key={index} className="d-flex justify-content-between mb-4" onMouseEnter={() => setShowMenu(index + 1)} onMouseLeave={() => setShowMenu('')}>
-                        {
-                            index + 1 == showMenu && showMenu != '' ?
-                                <div className="">
-                                    <MsgMenuButton id={msg.id} />
-                                </div>
-                                : <div></div>
-                        }
-                        <div className="d-flex justify-content-end" style={{ maxWidth: '300px' }}>
-                            <div className="msg_cotainer_send">
-                                {/* {msg.msg} */}
-
-
-                                {
-                                    msg.contents[0].format == 'text' ?
-                                        <div className='text_container_send'>
-                                            {msg.contents[0].content}
-                                        </div> : ''
-                                }
-
-                                {
-                                    msg.contents[0].format == 'image' ?
-                                        <div className='img_container d-flex' >
-                                            {
-                                                msg.contents.map(item => (
-
-                                                    <img src={`/storage/pics/${item.content}`} className='img' />
-
-                                                ))
-                                            }
-                                        </div>
-
-                                        : ''
-
-                                }
-
-
-
-
-
-                                <span className="msg_time_send">{dateFormat(msg.created_at, "h:MM TT, mmm d")}</span>
-                                <span className="receiver">{recipientName.split(' ')[0]}</span>
-                            </div>
-
-                            <div className="img_cont_msg">
-                                <img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg" className="rounded-circle user_img_msg" />
-                            </div>
-                        </div>
-                    </div>
-
-            }
+                <div ref={messagesEndRef} />
+              </>
+            ) : (
+              <div className="d-flex justify-content-center align-items-center" style={{height:'100px'}}>
+                <p style={{ fontSize: "25px", color: "white" }}>
+                  No User Found...
+                </p>
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
         </>
-    )
+      )}
+
+   
+
+
+    </Scrollbar>
+  );
 }
 
 
+function MsgMenuButton({ id, dispatch }) {
+  const [anchorEl, setAnchorEl] = React.useState(null);
+
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+  const handleDelete = () => {
+    axios
+      .post(`/api/deletemessage`, {
+        id,
+      })
+      .then((response) => {
+        console.log(response);
+        if (response.status == 200) {
+          dispatch({ type: "DELETE_SINGLE_MSG", payload: id });
+        }
+      });
+
+    setAnchorEl(null);
+  };
+  return (
+    <div>
+      <IconButton
+        aria-label="more"
+        aria-controls="long-menu"
+        aria-haspopup="true"
+        onClick={handleClick}
+        style={{ padding: 0, marginTop: "10px" }}
+      >
+        <MoreVertIcon />
+      </IconButton>
+      <Menu
+        id="simple-menu"
+        anchorEl={anchorEl}
+        keepMounted
+        open={Boolean(anchorEl)}
+        onClose={handleClose}
+      >
+        <MenuItem onClick={handleDelete}>Delete</MenuItem>
+      </Menu>
+    </div>
+  );
+}
+
+function SingleMsg({ index, msg, sender,selectedUser, dispatch }) {
+  const [showMenu, setShowMenu] = useState(false);
+
+  const [lightBox, setLightBox] = useState({
+    open:false,
+    url:[],
+    selectedindex:''
+  });
+
+  const handleLightBox = (contents,index) => {
+    setLightBox({
+      open:true,
+      url:contents.map((item)=>(
+        item.content
+      )),
+      selectedindex:index
+    })
+  }
+
+  return (
+    <>
+    
+      {sender ? (
+        <div
+          key={index}
+          className={`d-flex justify-content-between mb-4`}
+          onMouseEnter={() => setShowMenu(true)}
+          onMouseLeave={() => setShowMenu(false)}
+        >
+          <div
+            className="d-flex justify-content-start"
+            style={{ maxWidth: "300px" }}
+          >
+            <div className="img_cont_msg" style={{ position: "relative" }}>
+              <img
+                src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg"
+                className="rounded-circle user_img_msg"
+              />
+              <div className="doneIcon">
+                <CheckCircleOutlineRoundedIcon fontSize="inherit" />
+              </div>
+            </div>
+
+            <div className="msg_cotainer" style={{ display: "grid" }}>
+              {msg.contents[0].format == "text" && (
+                <div className="text_container">{msg.contents[0].content}</div>
+              )}
+
+              {msg.contents[0].format == "image" && (
+                <div className="img_container d-flex">
+                  {msg.contents.map((item,ind) => (
+                    <img src={item.content} className="img" onClick={()=>handleLightBox(msg.contents,ind)} />
+                  ))}
+                </div>
+              )}
+
+              <span className="msg_time">
+                {dateFormat(msg.created_at, "h:MM TT, mmm d")}
+              </span>
+
+              <span className="sender">Me</span>
+            </div>
+          </div>
+          {showMenu ? (
+            <div className="">
+              <MsgMenuButton id={msg.id} dispatch={dispatch} />
+            </div>
+          ) : (
+            <div></div>
+          )}
+        </div>
+      ) : (
+        <div
+          key={index}
+          className="d-flex justify-content-between mb-4"
+          onMouseEnter={() => setShowMenu(true)}
+          onMouseLeave={() => setShowMenu(false)}
+        >
+          {showMenu ? (
+            <div className="">
+              <MsgMenuButton id={msg.id} dispatch={dispatch} />
+            </div>
+          ) : (
+            <div></div>
+          )}
+
+          <div
+            className="d-flex justify-content-end"
+            style={{ maxWidth: "300px" }}
+          >
+            <div className="msg_cotainer_send">
+              {msg.contents[0].format == "text" && (
+                <div className="text_container_send">
+                  {msg.contents[0].content}
+                </div>
+              )}
+
+              {msg.contents[0].format == "image" && (
+                <div className="img_container d-flex">
+                  {msg.contents.map((item,ind) => (
+                    <img src={item.content} className="img" onClick={()=>handleLightBox(msg.contents,ind)} />
+                  ))}
+                </div>
+              )}
+
+              <span className="msg_time_send">
+                {dateFormat(msg.created_at, "h:MM TT, mmm d")}
+              </span>
+              <span className="receiver">
+                {selectedUser.name.split(" ")[0]}
+              </span>
+            </div>
+
+            <div className="img_cont_msg">
+              <img
+                src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg"
+                className="rounded-circle user_img_msg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {lightBox.open && (
+          <Lightbox
+            mainSrc={lightBox.url[lightBox.selectedindex]}
+            nextSrc={lightBox.selectedindex + 1 > lightBox.url.length ? undefined : lightBox.url[(lightBox.selectedindex + 1)]}
+            prevSrc={lightBox.selectedindex - 1 < 0 ? undefined : lightBox.url[(lightBox.selectedindex - 1)]}
+            
+            onCloseRequest={() => setLightBox({ ...lightBox,open: false })}
+            onMovePrevRequest={() =>
+              setLightBox({
+                ...lightBox,
+                selectedindex:(lightBox.selectedindex - 1) % lightBox.url.length
+              })
+            }
+            onMoveNextRequest={() =>
+              setLightBox({
+                ...lightBox,
+                selectedindex:(lightBox.selectedindex + 1) % lightBox.url.length
+              })
+            }
+          />
+        )}  
+        
+
+
+    </>
+  );
+}

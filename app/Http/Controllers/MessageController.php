@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\ChatEvent;
 use App\Events\NewEvent;
+use App\Http\Resources\MessageCollection;
 use App\MessageModel;
 use App\User;
 use Carbon\Carbon;
@@ -13,11 +14,46 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PhpParser\Node\Stmt\TryCatch;
-use Validator;
+// use Validator;
+use App\Http\Controllers\Builder;
+use App\Http\Resources\MessageResource;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Validator;
 
 class MessageController extends Controller
 {
     public function getMessages(Request $request)
+    {
+        $user = Auth::user();
+        $rid = $request->rid;
+
+        $rUser = User::where('id',$rid)->get();
+        
+        if($rUser->isEmpty()){
+            return response()->json(['message'=>'No User Found.'],404);
+        }
+
+        $updateSeen =  MessageModel::unseenMessages($user->id,$rid)->update(['seen'=>1]);  
+
+        $messages  = MessageModel::where(function ($query) use ($user, $rid) {
+                $query->where('msg_to', $user->id)
+                    ->Where('msg_from', $rid)
+                    ->where('is_deleted_from_reciever', 0);
+            })
+            ->orWhere((function ($query) use ($user, $rid) {
+                $query->where('msg_to', $rid)
+                    ->Where('msg_from', $user->id)
+                    ->where('is_deleted_from_sender', 0);
+            }))
+            ->with('contents')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+            // ->reverse();
+
+
+        return new MessageCollection($messages);
+    }
+    public function getMessages2(Request $request)
     {
 
         $user = Auth::user();
@@ -27,12 +63,12 @@ class MessageController extends Controller
         $recipient = User::find($rid);
         $recipientName = $recipient->name;
         $initLimit = 10;
-        $limit=10;
+        $limit = 10;
 
         $ruser = User::find($rid);
 
-        if(!$ruser){
-            return response()->json([],404);
+        if (!$ruser) {
+            return response()->json([], 404);
         }
 
         $count = DB::table('msg_tbl')
@@ -48,9 +84,9 @@ class MessageController extends Controller
             }))
             ->count();
 
-            if($count / $page < $limit){
-                $limit = $count % $limit;
-            }
+        if ($count / $page < $limit) {
+            $limit = $count % $limit;
+        }
 
         $limitedCount = DB::table('msg_tbl')
             ->where(function ($query) use ($user, $recipient) {
@@ -87,12 +123,12 @@ class MessageController extends Controller
             // return MessageModel::find($msg->id)->image;
             $contents = MessageModel::find($msg->id)->contents;
             $msg->contents = $contents->map(function ($content) {
-                if($content->format == 'image'){
-                    $a['content'] = asset('storage/pics/'.$content->content);    
-                }else{
+                if ($content->format == 'image') {
+                    $a['content'] = asset('storage/pics/' . $content->content);
+                } else {
                     $a['content'] = $content->content;
                 }
-                
+
                 $a['format'] = $content->format;
                 return $a;
             });
@@ -112,7 +148,7 @@ class MessageController extends Controller
             ->update(['seen' => 1]);
 
 
-        return response()->json(['messages' => $messages,'recipientName'=>$recipientName,'count' => $count,'lc'=>$limitedCount]);
+        return response()->json(['messages' => $messages, 'recipientName' => $recipientName, 'count' => $count, 'lc' => $limitedCount]);
     }
 
 
@@ -139,10 +175,19 @@ class MessageController extends Controller
     public function store(Request $request)
     {
 
+        if ($request->format == 'image') {
+            collect($request->content)->map(function ($item) {
+            
+                if($item->getSize() > 1992290){
+                    abort(403, 'File Size Can Not Be More Than 2MB');
+                }
+            
+            });
+        }
+
+       
+
         $user = Auth::user();
-        // $validator = validator::make($request->all(), [
-        //     'msg' => 'required'
-        // ]);
 
         $newMsg = new MessageModel;
 
@@ -154,7 +199,7 @@ class MessageController extends Controller
 
             if ($request->format == 'image') {
                 $item->store('pics');
-
+                
                 $newMsg->contents()->create([
                     'content' => $item->hashName(),
                     'format' => $request->format,
@@ -170,14 +215,16 @@ class MessageController extends Controller
 
         $newMsg->save();
 
-        $message = $newMsg::with('contents')->where('id', $newMsg->id)->get();
+      
+        $message = new MessageResource(MessageModel::with('contents')->where('id', $newMsg->id)->first());
 
-
-        broadcast(new ChatEvent($message, $request->msg_to))->toOthers();
+        broadcast(new ChatEvent($message,$request->msg_to))->toOthers();
 
         event(new NewEvent($user->id, $request->msg_to));
-
+        
+        return $message;       
         return response()->json(['message' => $message]);
+
     }
 
 
@@ -189,19 +236,18 @@ class MessageController extends Controller
 
         if (Auth::user()->id == $msg->sender['id']) {
 
-            $this->deleteMessageFrom($msg,'is_deleted_from_reciever','is_deleted_from_sender');
-
+            $this->deleteMessageFrom($msg, 'is_deleted_from_reciever', 'is_deleted_from_sender');
+            
         } elseif (Auth::user()->id == $msg->receiver['id']) {
 
-            $this->deleteMessageFrom($msg,'is_deleted_from_sender','is_deleted_from_reciever');
-
+            $this->deleteMessageFrom($msg, 'is_deleted_from_sender', 'is_deleted_from_reciever');
         }
 
         return response()->json(['data' => 'message deleted successfully'], 200);
     }
 
 
-    public function deleteMessageFrom($msg,$property1,$property2)
+    public function deleteMessageFrom($msg, $property1, $property2)
     {
         if ($msg->{$property1} == 1) {
 
@@ -230,7 +276,7 @@ class MessageController extends Controller
         $recipent = $request;
 
         try {
-            
+
             $receivedMessages = DB::table('msg_tbl')
                 ->where('msg_to', $user->id)
                 ->Where('msg_from', $recipent->id)
@@ -291,17 +337,18 @@ class MessageController extends Controller
         DB::table('msg_tbl')
             ->where('id', $request->id)
             ->update(['seen' => 1]);
+
+            return response()->json(['message'=>'success'],200);
     }
 
 
     public function checkRid($rid)
     {
         $user = User::find($rid);
-        if($user){
-            return response()->json(['found' => true],200);
-        }else{
-            return response()->json(['found' => false],404);
+        if ($user) {
+            return response()->json(['found' => true], 200);
+        } else {
+            return response()->json(['found' => false], 404);
         }
-        
     }
 }

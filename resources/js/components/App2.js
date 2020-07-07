@@ -47,10 +47,10 @@ export default function App2() {
 
         e.preventDefault();
 
-        axios.get('/airlock/csrf-cookie').then(response => {
+        axios.get(`/airlock/csrf-cookie`).then(response => {
 
 
-            axios.post('/login', {
+            axios.post(`/login`, {
                 email: loginData.email,
                 password: loginData.password
             })
@@ -73,7 +73,7 @@ export default function App2() {
     }
 
     const handleClick = () => {
-        axios.post('/logout')
+        axios.post(`/logout`)
             .then(respose => {
                 console.log(respose)
             })
@@ -82,7 +82,7 @@ export default function App2() {
             })
     }
     const handleuser = () => {
-        axios.get('/api/user')
+        axios.get(`api/user`)
             .then(respose => {
                 console.log(respose)
             })
@@ -93,7 +93,7 @@ export default function App2() {
 
 
     useEffect(()=>{
-        axios.get('/api/checkauth')
+        axios.get(`/api/checkauth`)
         .then(response =>{
             console.log(response.status)
             if(response.status == 200){

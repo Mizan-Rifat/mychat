@@ -1,4 +1,4 @@
-import React,{useEffect} from 'react';
+import React, { useState,useEffect, useContext } from 'react';
 import { fade, makeStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -10,8 +10,11 @@ import AccountCircle from '@material-ui/icons/AccountCircle';
 import { useHistory } from 'react-router-dom'
 import MenuIcon from '@material-ui/icons/Menu';
 import { Hidden } from '@material-ui/core';
-
+import axios from 'axios'
 import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
+import { drawerContext } from './App';
+import { MyContext } from './ChatUI';
+import { useQueryState } from 'react-router-use-location-state';
 
 const useStyles = makeStyles(theme => ({
     grow: {
@@ -19,13 +22,28 @@ const useStyles = makeStyles(theme => ({
     },
     menuButton: {
         marginRight: theme.spacing(2),
+        position:'relative'
     },
     title: {
         display: 'none',
+        '&:hover':{
+            cursor:'pointer'
+        },
         [theme.breakpoints.up('sm')]: {
             display: 'block',
         },
+
     },
+    redDot:{
+        height:'10px',
+        width:'10px',
+        borderRadius:'50%',
+        position:'absolute',
+        background:'red',
+        top: '13px',
+        right: '10px'
+
+    }
 
 
 
@@ -36,7 +54,7 @@ const theme = createMuiTheme({
         MuiMenu: {
             paper: {
                 background: '#7F7FD5',
-                color:'white'
+                color: 'white'
             },
         },
     },
@@ -45,6 +63,13 @@ const theme = createMuiTheme({
 export default function MyAppBar(props) {
 
     const history = useHistory();
+
+    const { user, setUser } = useContext(drawerContext);
+    const { setRid, contactState } = useContext(MyContext);
+
+    const [query, setQuery] = useQueryState('rid', '')
+    const [unreadMsg,setUnreadMsg] = useState(false)
+
     const classes = useStyles();
     const [anchorEl, setAnchorEl] = React.useState(null);
     const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = React.useState(null);
@@ -68,17 +93,16 @@ export default function MyAppBar(props) {
 
     const handleLogout = () => {
         handleMenuClose();
-        axios.get('/airlock/csrf-cookie').then(response => {
+        axios.get(`/airlock/csrf-cookie`).then(response => {
 
-            axios.post('/logout')
+            axios.post(`/logout`)
                 .then(response => {
-
-                    console.log(response)
-
+                    
                     if (response.status == 200) {
-
-                        localStorage.removeItem('userID')
-                        localStorage.removeItem('loggedIn')
+                        setUser({
+                            ...user,
+                            user: {}
+                        })
                         history.push('/')
 
                     }
@@ -88,6 +112,12 @@ export default function MyAppBar(props) {
 
                 })
         });
+    }
+
+
+    const handleLogoClick = () => {
+        setQuery('')
+        setRid('')
     }
 
     const menuId = 'primary-search-account-menu';
@@ -110,55 +140,74 @@ export default function MyAppBar(props) {
     );
 
 
+    useEffect(()=>{
+        setUnreadMsg(contactState.contacts.some(item => item.unReadMessages > 0))
+    },[contactState.contacts])
+
+
 
 
 
     return (
-        <div className={classes.grow}>
-            <AppBar position="static" style={{ background: '#353D5A' }}>
-                <Toolbar>
-                    <Hidden smUp>
-
-                        <IconButton
-                            edge="start"
-                            className={classes.menuButton}
-                            color="inherit"
-                            aria-label="open drawer"
-                            onClick={()=>props.setOpen(true)}
-                        >
-                            <MenuIcon />
-                        </IconButton>
-
-                    </Hidden>
-
-                    <Typography className={classes.title} variant="h6" noWrap>
-                        MyChatApp
-          </Typography>
+        <>
+            {
+                history.location.pathname == '/login' || history.location.pathname == '/register' || history.location.pathname == '/' ?
+                    // false ?
+                    ''
+                    :
 
 
-                    <div className={classes.grow} />
-                    <div className={classes.sectionDesktop}>
+                    <div className={classes.grow}>
+                        <AppBar position="static" style={{ background: '#353D5A' }}>
+                            <Toolbar>
+                                <Hidden smUp>
 
-                        {
-                            localStorage.getItem('loggedIn') ?
+                                    <IconButton
+                                        edge="start"
+                                        className={classes.menuButton}
+                                        color="inherit"
+                                        aria-label="open drawer"
+                                        onClick={() => props.setOpen(true)}
+                                    >
+                                        <MenuIcon />
+                                        {
+                                            unreadMsg &&
+                                            <div className={classes.redDot} />
+                                        }
+                                    </IconButton>
 
-                                <IconButton
-                                    edge="end"
-                                    aria-label="account of current user"
-                                    aria-controls={menuId}
-                                    aria-haspopup="true"
-                                    onClick={handleProfileMenuOpen}
-                                    color="inherit"
-                                >
-                                    <AccountCircle />
-                                </IconButton>
-                                : ''
-                        }
+                                </Hidden>
+
+                                <Typography className={classes.title} variant="h6" noWrap onClick={handleLogoClick}>
+                                    MyChat
+                                </Typography>
+
+
+                                <div className={classes.grow} />
+                                <div className={classes.sectionDesktop}>
+
+
+
+                                    <IconButton
+                                        edge="end"
+                                        aria-label="account of current user"
+                                        aria-controls={menuId}
+                                        aria-haspopup="true"
+                                        onClick={handleProfileMenuOpen}
+                                        color="inherit"
+                                    >
+                                        <AccountCircle />
+                                    </IconButton>
+
+                                </div>
+
+                            </Toolbar>
+                        </AppBar>
+                        {renderMenu}
                     </div>
 
-                </Toolbar>
-            </AppBar>
-            {renderMenu}
-        </div>
+            }
+
+        </>
     );
 }

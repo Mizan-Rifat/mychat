@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Events\NewEvent;
+use App\Http\Resources\MessageCollection;
+use App\Http\Resources\MessageResource;
+use App\Http\Resources\Messages;
 use App\MessageModel;
 use App\User;
 use Carbon\Carbon;
@@ -13,34 +16,38 @@ use Illuminate\Support\Facades\Session;
 
 class HomeController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
+    
     public function __construct()
     {
-        // $this->middleware('auth');
+      
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
+    
     public function test()
     { 
-    return asset('pics/cSecYm5uR3lYsi28YJdoJSj9wGHIAsDzmUpnAZN1.jpeg');
+
+      $user = User::where('id','1')->get();
+      if($user->isEmpty()){
+          return 'gfg';
+      }else{
+          return 'sdf';
+      }
+      
+
+
+        $messages  = MessageModel::unseenMessages(1,2)->update(['seen'=>3]);
+
+
+     return $messages;
+        return new MessageResource($messages);
+
     }
 
-    public function check()
+    public function remove()
     {
-        return response()->json(['auth' => Auth::check()], 200);
-        // if (Auth::check()) {
-        //     return response()->json(['auth' => true], 200);
-        // } else {
-        //     return response()->json(['auth' => false], 403);
-        // }
+        DB::table('msg_tbl')->truncate();
+        DB::table('msg_content_tbl')->truncate();
+     
     }
 
 

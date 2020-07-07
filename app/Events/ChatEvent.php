@@ -23,32 +23,25 @@ class ChatEvent implements ShouldBroadcast
      */
 
     public $msg;
-    public $content;
     public $rid;
     public $user;
 
     public function __construct($msg,$rid)
     {
-        // $this->msg = MessageModel::find($msg[0]->id)->contents;
         $this->msg = $msg;
-        $this->content = MessageModel::find($msg[0]->id)->contents;
         $this->rid = $rid;
         $this->user = Auth::user()->id;
 
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return \Illuminate\Broadcasting\Channel|array
-     */
+
     public function broadcastOn()
     {
         return new PrivateChannel('chat.'.min($this->user,$this->rid).'.'.max($this->user,$this->rid));
     }
 
     public function broadcastWith(){
-        return ['message'=>$this->msg[0],'contents'=>$this->content];
+        return [$this->msg];
     }
 
 

@@ -19,12 +19,13 @@ use Illuminate\Support\Facades\Route;
 // });
 
 Route::middleware('auth:airlock')->get('/user', function (Request $request) {
-    return $request->user();
+    return Auth::user();
 });
 
 Route::get('/test', 'HomeController@test');
+Route::get('/remove', 'HomeController@remove');
 Route::get('/checkauth', 'HomeController@check');
-
+Route::get('/m', 'MessageController@getMessages');
 Route::group(['middleware' => 'auth:airlock'], function () {
 
     Route::get('/messages', 'MessageController@getMessages');
