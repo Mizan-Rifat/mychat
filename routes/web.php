@@ -1,6 +1,10 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -17,8 +21,9 @@ Route::get('/login/github/callback', 'Auth\LoginController@handleProviderCallbac
 
 Route::view('/{path?}', 'main');
 // Route::get('/', function () {
-//     return view('main');
+//     return view('home');
 // });
+Route::post('stripe', 'HomeController@paymentProcess')->name('stripe.post');
 
 Auth::routes();
 

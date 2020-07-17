@@ -16,6 +16,23 @@ class MessageModel extends Model
         'asd' => 'array'
     ];
 
+    public function scopeSendMessages($query,$user_id,$rid)
+    {
+        return $query->where('msg_from',$user_id)->where('msg_to',$rid);
+    }
+
+    public function scopeReceivedMessages($query,$user_id,$rid)
+    {
+        return $query->where('msg_to',$user_id)->where('msg_from',$rid);
+    }
+    public function scopeUnseenMessages($query,$user_id,$rid)
+    {
+        return $query->where('msg_to', $user_id)
+            ->Where('msg_from', $rid)
+            ->where('is_deleted_from_reciever', 0)
+            ->where('seen', 0);
+    }
+
     protected $hidden = ['is_deleted_from_sender','is_deleted_from_reciever','updated_at'];
 
     public function sender(){

@@ -7,6 +7,11 @@ html {
     background: linear-gradient(to right, #91EAE4, #86A8E7, #7F7FD5);
 }
 
+button:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
 .chat {
     margin-top: auto;
     margin-bottom: auto;
@@ -54,6 +59,7 @@ html {
 .card-footer {
     border-radius: 0 0 15px 15px !important;
     border-top: 0 !important;
+    padding:0.75rem 10px !important;
 }
 
 .container {
@@ -222,8 +228,8 @@ html {
 
 .img {
     border-radius: 5px;
-    height: 100px;
-    width: 100px;
+    height: 90px;
+    width: 90px;
     margin-right: 5px;
     margin-bottom: 5px
 }
@@ -340,9 +346,9 @@ html {
 
 
 .user_card {
-    height: 500px;
+    height: 480px;
     width: 350px;
-    margin: 100px 0;
+    margin: 80px 0;
     background: #353D5A;
     /* background: #78E08F; */
     position: relative;
@@ -466,9 +472,15 @@ html {
     .user_info p {
         margin-bottom: 0px !important;
     }
+    .user_info span {
+        font-size: 16px !important;
+    }
 
     .search-header {
         padding: 0.75rem 0.25rem;
+    }
+    .emoji-mart {
+        width: 307px !important ;
     }
 
 }

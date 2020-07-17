@@ -1,21 +1,18 @@
 import React, { useState, useEffect, useContext } from 'react';
 import SearchIcon from '@material-ui/icons/Search';
-import { MyContext } from '../ChatUI2';
+import { MyContext } from '../ChatUI';
 
 export default function SearchBar() {
 
-    const { contacts, setContacts, filteredContacts } = useContext(MyContext);
+    const {contactDispatch } = useContext(MyContext);
 
     const [query, setQuery] = useState('')
 
     useEffect(() => {
-        if (query == '') {
-            setContacts(filteredContacts)
-        } else {
-            setContacts(contacts.filter(contact => contact.name.toUpperCase().includes(query.toUpperCase())))
-        }
+        contactDispatch({ type: 'SET_FILTERD_CONTACTS', payload: query })
+  
     }, [query])
-    
+
     return (
         <div className="card-header search-header">
             <div className="input-group">

@@ -1,115 +1,220 @@
-import React, { useState, useEffet } from 'react';
-import PersonIcon from '@material-ui/icons/Person';
-import VpnKeyIcon from '@material-ui/icons/VpnKey';
-import { useHistory } from 'react-router-dom'
-import { makeStyles } from '@material-ui/styles';
-
+import React, {useState, useEffet} from "react";
+import PersonIcon from "@material-ui/icons/Person";
+import VpnKeyIcon from "@material-ui/icons/VpnKey";
+import {useHistory} from "react-router-dom";
+import {makeStyles} from "@material-ui/styles";
+import axios from "axios";
+import clsx from "clsx";
+import ErrorIcon from "@material-ui/icons/Error";
 
 const useStyles = makeStyles(theme => ({
-    inputGroupText: {
-        background: '#c0392b !important',
-        color: 'white!important',
-        border: '0!important',
-        borderRadius: '0.25rem 0 0 0.25rem!important'
-    }
-}))
+  inputGroupText: {
+    background: "#c0392b !important",
+    color: "white!important",
+    border: "0!important",
+    borderRadius: "0.25rem 0 0 0.25rem!important",
+  },
+  errorIcon: {
+    position: "absolute",
+    right: "5px",
+    top: "7px",
+    color: "red",
+    zIndex: 10,
+  },
+  formDisable: {
+    pointerEvents: "none",
+    opacity: "0.5",
+    // background: "rgba(255, 255, 255, 0.6)",
+  },
+}));
 
-export default function LoginForm({setResLoading}) {
+export default function LoginForm({loading, setLoading, user, setUser}) {
+  const classes = useStyles();
 
-    const classes = useStyles();
+  const initState = {
+    email: "",
+    password: "",
+    remember: false,
+    errors: {},
+  };
 
-    const initState = {
-        email: '',
-        password: '',
-        remember:false,
-        error: ''
-    }
-    const [loginData, setLoginData] = useState(initState);
-    const history = useHistory();
+  const [loginData, setLoginData] = useState(initState);
 
-    const handleFieldChange = (e) => {
+  // const [loading, setLoading] = useState(false);
 
-        setLoginData({
-            ...loginData,
-            [e.target.name]: e.target.value
-        })
+  const history = useHistory();
 
-    }
+  const handleFieldChange = e => {
+    setLoginData({
+      ...loginData,
+      [e.target.name]: e.target.value,
+    });
+  };
 
-    const login = (e) => {
+  const hasError = field => {
+    return !!loginData.errors[field];
+  };
 
-        // e.preventDefault();
-        setResLoading(true)
+  const renderError = field =>
+    loginData.errors.hasOwnProperty(field) ? (
+      <small
+        style={{
+          marginLeft: "50px",
+          color: "chocolate",
+        }}
+      >
+        {loginData.errors[field][0]}
+      </small>
+    ) : (
+      ""
+    );
 
-        axios.get('/airlock/csrf-cookie').then(response => {
-            axios.post('/login', {
-                email: loginData.email,
-                password: loginData.password,
-                remember : loginData.remember ? 'on' : ''
-            })
-                .then(response => {
-                    setResLoading(false)
-                    if (response.status === 200) {
-                        console.log(response)
-                        localStorage.setItem('userID', response.data.id)
-                        localStorage.setItem('loggedIn', true)
-                        history.push('/chat')
+  const login = e => {
+    e.preventDefault();
+    // setResLoading(true);
+    setLoading(true);
 
-                    }
-                })
-                .catch(error => {
-                    setResLoading(false)
-                    console.log(error)
+    axios
+      .get(`/airlock/csrf-cookie`)
+      .then(response => {
+        axios
+          .post(
+            `/login`,
+            {
+              email: loginData.email,
+              password: loginData.password,
+              remember: loginData.remember ? "on" : "",
+            }
+          )
+          .then(response => {
+            // setResLoading(false);
+            setLoading(false);
 
-                })
-        });
-    }
+            if (response.status === 200) {
+              setUser({
+                ...user,
+                user: response.data,
+              });
+              history.push("/message");
+            }
+          })
+          .catch(error => {
+            if (error.response.status == 422) {
+              setLoginData({
+                ...loginData,
+                error: "",
+                errors: error.response.data.errors,
+              });
+            }
+            if (error.response.status == 401) {
+              setLoginData({
+                ...loginData,
+                errors: [],
+                error: error.response.data.error,
+              });
+            }
+            // setResLoading(false);
+            setLoading(false);
+          });
+      });
+  };
 
-    const handleClick = () => {
-        axios.post('/logout')
-            .then(respose => {
-                console.log(respose)
-            })
-            .catch(error => {
-                console.log(error)
-            })
-    }
-    return (
-        <div className="d-flex justify-content-center form_container" > 
-            <form>
-                <div className="input-group mb-3">
-                    <div className="input-group-append">
-                        <span className='input-group-text input-group-text2'><PersonIcon /></span>
-                    </div>
-                    <input type="text" className="form-control input_user" placeholder="Email" value={loginData.email} onChange={(e) => setLoginData({ ...loginData, email: e.target.value })} />
-                </div>
+  return (
+    
+    <div className="d-flex justify-content-center form_container">
+      <form onSubmit={login} className={clsx({[classes.formDisable]: loading})}>
+        <div
+          className={clsx("input-group position-relative", {
+            "mb-3": !hasError("email"),
+          })}
+        >
+          <div className="input-group-append">
+            <span className="input-group-text input-group-text2">
+              <PersonIcon />
+            </span>
+          </div>
 
-                <div className="input-group mb-2">
-                    <div className="input-group-append">
-                        <span className='input-group-text input-group-text2'><VpnKeyIcon /></span>
-                    </div>
-                    <input type="password" className="form-control input_pass" placeholder="password" value={loginData.password} onChange={(e) => setLoginData({ ...loginData, password: e.target.value })} />
-                </div>
-                <div className="form-group">
-                    <div className="custom-control custom-checkbox" style={{color:'white'}}>
-                        <input type="checkbox" className="custom-control-input" id="customControlInline" onChange={(e) => setLoginData({ ...loginData, remember: e.target.checked })}/>
-                        <label  className="custom-control-label" htmlFor="customControlInline">Remember me</label>
-                    </div>
-                </div>
+          <input
+            type="text"
+            name="email"
+            className="form-control input_user"
+            placeholder="Email"
+            value={loginData.email}
+            onChange={handleFieldChange}
+          />
 
-                <LoginButton label='Login' handleClick={login} />
-
-
-            </form>
+          <ErrorIcon
+            className={clsx(classes.errorIcon, {
+              "d-none": !hasError("email"),
+            })}
+          />
         </div>
-    )
+
+        {renderError("email")}
+
+        <div
+          className={clsx("input-group position-relative", {
+            "mb-3": !hasError("password"),
+          })}
+        >
+          <div className="input-group-append">
+            <span className="input-group-text input-group-text2">
+              <VpnKeyIcon />
+            </span>
+          </div>
+          <input
+            type="password"
+            name="password"
+            className="form-control input_pass"
+            placeholder="password"
+            value={loginData.password}
+            onChange={handleFieldChange}
+          />
+          <ErrorIcon
+            className={clsx(classes.errorIcon, {
+              "d-none": !hasError("password"),
+            })}
+          />
+        </div>
+        {renderError("password")}
+        <div className="form-group">
+          <div
+            className="custom-control custom-checkbox"
+            style={{
+              color: "white",
+            }}
+          >
+            <input
+              type="checkbox"
+              className="custom-control-input"
+              id="customControlInline"
+              onChange={e =>
+                setLoginData({
+                  ...loginData,
+                  remember: e.target.checked,
+                })
+              }
+            />
+            <label
+              className="custom-control-label"
+              htmlFor="customControlInline"
+            >
+              Remember me
+            </label>
+          </div>
+        </div>
+        <LoginButton label="Login" />
+      </form>
+    </div>
+  );
 }
 
-function LoginButton({ label, handleClick }) {
-
-    return (
-        <div className="d-flex justify-content-center mt-3 login_container">
-            <button type="button" name="button" className="btn login_btn" onClick={handleClick}>{label}</button>
-        </div>
-    )
+function LoginButton({label}) {
+  return (
+    <div className="d-flex justify-content-center mt-3 login_container">
+      <button type="submit" name="button" className="btn login_btn">
+        {label}
+      </button>
+    </div>
+  );
 }
