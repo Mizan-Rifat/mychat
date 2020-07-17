@@ -65,7 +65,7 @@ export default function MyAppBar(props) {
     const history = useHistory();
 
     const { user, setUser } = useContext(drawerContext);
-    const { setRid, contactState } = useContext(MyContext);
+    const { contactState,contactDispatch} = useContext(MyContext);
 
     const [query, setQuery] = useQueryState('rid', '')
     const [unreadMsg,setUnreadMsg] = useState(false)
@@ -97,7 +97,7 @@ export default function MyAppBar(props) {
 
             axios.post(`/logout`)
                 .then(response => {
-                    
+
                     if (response.status == 200) {
                         setUser({
                             ...user,
@@ -117,7 +117,11 @@ export default function MyAppBar(props) {
 
     const handleLogoClick = () => {
         setQuery('')
-        setRid('')
+        // setRid('')
+        contactDispatch({
+          type:'SET_RID',
+          payload:''
+        })
     }
 
     const menuId = 'primary-search-account-menu';

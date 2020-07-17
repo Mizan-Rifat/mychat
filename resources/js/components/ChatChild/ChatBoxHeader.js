@@ -9,8 +9,8 @@ import axios from 'axios'
 export default function ChatBoxHeader() {
     const [anchorEl, setAnchorEl] = React.useState(null);
 
-    const { rid,contactState,messageState, messageDispatch} = useContext(MyContext);
-  
+    const { contactState,messageState, messageDispatch} = useContext(MyContext);
+
 
     const handleClick = event => {
         setAnchorEl(event.currentTarget);
@@ -22,7 +22,7 @@ export default function ChatBoxHeader() {
 
     const handleDelete = () => {
         axios.post(`${process.env.REACT_APP_DOMAIN}/api/deleteallmessages`, {
-            id: rid
+            id: contactState.rid
         })
             .then(response => {
                 if(response.status == 200)
@@ -31,16 +31,16 @@ export default function ChatBoxHeader() {
         setAnchorEl(null);
     }
 
- 
 
- 
+
+
 return (
     <div className="card-header msg_head d-flex justify-content-between">
         <div className="d-flex bd-highlight">
             <div className="img_cont">
                 <img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg" className="rounded-circle user_img" />
                 {
-                    contactState.currentUsers.some(user => user.id == rid) ? <span className="online_icon" /> : <span className="online_icon offline" />
+                    contactState.currentUsers.some(user => user.id == contactState.rid) ? <span className="online_icon" /> : <span className="online_icon offline" />
                 }
 
             </div>

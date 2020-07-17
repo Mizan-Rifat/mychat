@@ -58,7 +58,7 @@ function ChatBoxFooter({ listenerState, listenerDispatch }) {
 
     const ref = useRef();
 
-    const { rid, messageDispatch, user } = useContext(MyContext);
+    const { contactState,messageDispatch, user } = useContext(MyContext);
 
     const handleSend = e => {
         e.preventDefault();
@@ -68,7 +68,7 @@ function ChatBoxFooter({ listenerState, listenerDispatch }) {
         const config = { headers: { "Content-Type": "multipart/form-data" } };
         const formData = new FormData();
 
-        formData.append("msg_to", rid);
+        formData.append("msg_to", contactState.rid);
 
         if (message != "") {
             formData.append("content[]", message);
@@ -118,8 +118,8 @@ function ChatBoxFooter({ listenerState, listenerDispatch }) {
     const handleFocus = () => {
         setPicker(false);
         window.Echo.private(
-            `chat.${Math.min(parseInt(rid), user.user.id)}.${Math.max(
-                parseInt(rid),
+            `chat.${Math.min(parseInt(contactState.rid), user.user.id)}.${Math.max(
+                parseInt(contactState.rid),
                 user.user.id
             )}`
         ).whisper("typing", {
@@ -128,8 +128,8 @@ function ChatBoxFooter({ listenerState, listenerDispatch }) {
     };
     const handleBlur = () => {
         window.Echo.private(
-            `chat.${Math.min(parseInt(rid), user.user.id)}.${Math.max(
-                parseInt(rid),
+            `chat.${Math.min(parseInt(contactState.rid), user.user.id)}.${Math.max(
+                parseInt(contactState.rid),
                 user.user.id
             )}`
         ).whisper("notTyping", {
@@ -156,7 +156,7 @@ function ChatBoxFooter({ listenerState, listenerDispatch }) {
           }else{
             fileArray.push(array[i]);
           }
-            
+
         }
         // console.log(fileArray)
         setAttachments(fileArray);
@@ -168,7 +168,7 @@ function ChatBoxFooter({ listenerState, listenerDispatch }) {
 
     useEffect(() => {
         setMessage("");
-    }, [rid]);
+    }, [contactState.rid]);
 
     useEffect(() => {
         if (message != "" || attachments.length > 0) {

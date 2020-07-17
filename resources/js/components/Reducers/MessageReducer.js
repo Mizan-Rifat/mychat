@@ -28,6 +28,16 @@ export default  (state,action)=>{
                 msgs:[...state.msgs,action.payload],
                 msgsCount:state.msgsCount + 1
             }
+        case 'SET_SOCKET_MSG_SEEN':
+            return {
+                ...state,
+                msgs:state.msgs.map(msg=> msg.id == action.payload ? {...msg,seen:1} : msg)
+            }
+        case 'SET_MSGS_SEEN':
+            return {
+                ...state,
+                msgs:state.msgs.map(msg=> ({...msg,seen:1}))
+            }
         case 'ADD_SINGLE_MSG':
             return {
                 ...state,
@@ -39,20 +49,20 @@ export default  (state,action)=>{
             return {
                 ...state,
                 msgs:state.msgs.filter(msg=> msg.id != action.payload),
-                msgsCount:state.msgsCount -1 
+                msgsCount:state.msgsCount -1
             }
         case 'DELETE_ALL_MSGS':
             return {
                 ...state,
                 msgs:[],
-                msgsCount:0 
+                msgsCount:0
             }
         case 'SET_FLAG_FALSE':
             return {
                 ...state,
                 msgsChangedflag:false,
             }
-    
+
         default:
             return state;
     }

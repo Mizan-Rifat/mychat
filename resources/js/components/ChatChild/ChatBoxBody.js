@@ -17,6 +17,7 @@ import VisibilitySensor from "react-visibility-sensor";
 import { Button } from "@material-ui/core";
 import Lightbox from 'react-image-lightbox';
 import 'react-image-lightbox/style.css';
+import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
 
 
 
@@ -26,7 +27,7 @@ const useStyles = makeStyles((theme) => ({
       background: "#f00",
     },
   },
- 
+
 }));
 export default function ChatBoxBody({listenerState,listenerDispatch}) {
 
@@ -35,13 +36,13 @@ export default function ChatBoxBody({listenerState,listenerDispatch}) {
   const sound = new Audio('/uploads/audio/1.mp3')
   const [ruser, setRuser] = useState(true);
   const [initLoading, setInitLoading] = useState(true);
-  
 
-  
+
+
 
   const [currentChannel, setCurrentChannel] = useState(0);
 
-  const { rid, messageState, messageDispatch, user, contactState,contactDispatch} = useContext(
+  const { messageState, messageDispatch, user, contactState,contactDispatch} = useContext(
     MyContext
   );
 
@@ -90,7 +91,7 @@ export default function ChatBoxBody({listenerState,listenerDispatch}) {
       type : 'INIT_STATE'
     })
     axios
-      .get(`/api/messages?rid=${rid}`)
+      .get(`/api/messages?rid=${contactState.rid}`)
       .then((response) => {
         // console.log(response.data.data.reverse());
         messageDispatch({
@@ -112,10 +113,10 @@ export default function ChatBoxBody({listenerState,listenerDispatch}) {
         setInitLoading(false);
         if (e.response.status == 404) {
             setRuser(false);
-            
+
         }
       });
-  }, [rid]);
+  }, [contactState.rid]);
 
   useEffect(() => {
 
@@ -128,39 +129,58 @@ export default function ChatBoxBody({listenerState,listenerDispatch}) {
       )}`)
 
 
-      setCurrentChannel(rid)
+      setCurrentChannel(contactState.rid)
 
       window.Echo
         .private(
-          `chat.${Math.min(parseInt(rid), user.user.id)}.${Math.max(
-            parseInt(rid),
+          `chat.${Math.min(parseInt(contactState.rid), user.user.id)}.${Math.max(
+            parseInt(contactState.rid),
+            user.user.id
+          )}`
+        )
+        .listen("SeenEvent", function (data) {
+
+          messageDispatch({
+            type: "SET_MSGS_SEEN",
+          });
+        })
+
+      window.Echo
+        .private(
+          `chat.${Math.min(parseInt(contactState.rid), user.user.id)}.${Math.max(
+            parseInt(contactState.rid),
             user.user.id
           )}`
         )
         .listen("ChatEvent", function (data) {
-          if (data[0].msg_to == user.user.id) {
 
-            messageDispatch({
-              type: "SET_SOCKET_MSGS",
-              payload: data[0],
-            });
+          if (data.msg.seen == 0) {
 
-            console.log('dsfdsf',rid)
+            if (data.msg.msg_to == user.user.id) {
 
-            // contactDispatch({
-            //   type:'CLEAN_UNREAD_MESSAGE',
-            //   payload:rid
-            // })
+              messageDispatch({
+                type: "SET_SOCKET_MSGS",
+                payload: data.msg,
+              });
 
-            listenerDispatch({
-                type:'INCOMING_MESSAGE'
-            })
-            sound.play();
-            
-            axios.post(`/api/setseen`, {
-              id: data[0].id,
-            });
+              listenerDispatch({
+                type: 'INCOMING_MESSAGE'
+              })
+
+              sound.play();
+
+              axios.post(`/api/setseen`, {
+                id: data.msg.id,
+              });
           }
+        }else{
+          messageDispatch({
+            type:'SET_SOCKET_MSG_SEEN',
+            payload:data.msg.id
+          })
+        }
+
+
         })
         .listenForWhisper("typing", (e) => {
             listenerDispatch({
@@ -179,14 +199,14 @@ export default function ChatBoxBody({listenerState,listenerDispatch}) {
             })
         });
     }
-  }, [initLoading,rid]);
+  }, [initLoading,contactState.rid]);
 
   useEffect(() => {
 
     if (listenerState.scroll) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-    
+
   }, [listenerState]);
 
 
@@ -223,7 +243,7 @@ export default function ChatBoxBody({listenerState,listenerDispatch}) {
                         sender={msg.msg_from == user.user.id ? true : false}
                         dispatch={messageDispatch}
                       />
-                      
+
                     </VisibilitySensor>
                   ) : (
                     <SingleMsg
@@ -251,7 +271,7 @@ export default function ChatBoxBody({listenerState,listenerDispatch}) {
         </>
       )}
 
-   
+
 
 
     </Scrollbar>
@@ -328,7 +348,7 @@ function SingleMsg({ index, msg, sender,selectedUser, dispatch }) {
 
   return (
     <>
-    
+
       {sender ? (
         <div
           key={index}
@@ -346,7 +366,13 @@ function SingleMsg({ index, msg, sender,selectedUser, dispatch }) {
                 className="rounded-circle user_img_msg"
               />
               <div className="doneIcon">
-                <CheckCircleOutlineRoundedIcon fontSize="inherit" />
+                  {
+                      msg.seen ?
+
+                    <CheckCircleOutlineRoundedIcon fontSize = "inherit" />
+                    :
+                    <RadioButtonUncheckedIcon fontSize = "inherit" />
+                  }
               </div>
             </div>
 
@@ -436,7 +462,7 @@ function SingleMsg({ index, msg, sender,selectedUser, dispatch }) {
             mainSrc={lightBox.url[lightBox.selectedindex]}
             nextSrc={lightBox.selectedindex + 1 > lightBox.url.length ? undefined : lightBox.url[(lightBox.selectedindex + 1)]}
             prevSrc={lightBox.selectedindex - 1 < 0 ? undefined : lightBox.url[(lightBox.selectedindex - 1)]}
-            
+
             onCloseRequest={() => setLightBox({ ...lightBox,open: false })}
             onMovePrevRequest={() =>
               setLightBox({
@@ -451,8 +477,8 @@ function SingleMsg({ index, msg, sender,selectedUser, dispatch }) {
               })
             }
           />
-        )}  
-        
+        )}
+
 
 
     </>

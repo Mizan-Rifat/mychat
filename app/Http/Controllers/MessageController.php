@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\ChatEvent;
 use App\Events\NewEvent;
+use App\Events\SeenEvent;
 use App\Http\Resources\MessageCollection;
 use App\MessageModel;
 use App\User;
@@ -28,12 +29,15 @@ class MessageController extends Controller
         $rid = $request->rid;
 
         $rUser = User::where('id',$rid)->get();
-        
+
         if($rUser->isEmpty()){
             return response()->json(['message'=>'No User Found.'],404);
         }
 
-        $updateSeen =  MessageModel::unseenMessages($user->id,$rid)->update(['seen'=>1]);  
+        $updateSeen =  MessageModel::unseenMessages($user->id,$rid)->update(['seen'=>1]);
+
+        event(new SeenEvent($request->rid));
+
 
         $messages  = MessageModel::where(function ($query) use ($user, $rid) {
                 $query->where('msg_to', $user->id)
@@ -177,15 +181,15 @@ class MessageController extends Controller
 
         if ($request->format == 'image') {
             collect($request->content)->map(function ($item) {
-            
+
                 if($item->getSize() > 1992290){
                     abort(403, 'File Size Can Not Be More Than 2MB');
                 }
-            
+
             });
         }
 
-       
+
 
         $user = Auth::user();
 
@@ -199,7 +203,7 @@ class MessageController extends Controller
 
             if ($request->format == 'image') {
                 $item->store('pics');
-                
+
                 $newMsg->contents()->create([
                     'content' => $item->hashName(),
                     'format' => $request->format,
@@ -215,14 +219,14 @@ class MessageController extends Controller
 
         $newMsg->save();
 
-      
+
         $message = new MessageResource(MessageModel::with('contents')->where('id', $newMsg->id)->first());
 
         broadcast(new ChatEvent($message,$request->msg_to))->toOthers();
 
         event(new NewEvent($user->id, $request->msg_to));
-        
-        return $message;       
+
+        return $message;
         return response()->json(['message' => $message]);
 
     }
@@ -237,7 +241,7 @@ class MessageController extends Controller
         if (Auth::user()->id == $msg->sender['id']) {
 
             $this->deleteMessageFrom($msg, 'is_deleted_from_reciever', 'is_deleted_from_sender');
-            
+
         } elseif (Auth::user()->id == $msg->receiver['id']) {
 
             $this->deleteMessageFrom($msg, 'is_deleted_from_sender', 'is_deleted_from_reciever');
@@ -334,9 +338,18 @@ class MessageController extends Controller
 
     public function setSeen(Request $request)
     {
-        DB::table('msg_tbl')
-            ->where('id', $request->id)
-            ->update(['seen' => 1]);
+        // DB::table('msg_tbl')
+        //     ->where('id', $request->id)
+        //     ->update(['seen' => 1]);
+
+            $message = MessageModel::where('id',$request->id)
+                      ->with('contents')
+                      ->first();
+            $message->seen = 1;
+            $message->save();
+
+            event(new ChatEvent($message,$message->msg_from));
+            // broadcast(new ChatEvent($message,$request->msg_to))->toOthers();
 
             return response()->json(['message'=>'success'],200);
     }

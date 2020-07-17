@@ -41,7 +41,7 @@ class ChatEvent implements ShouldBroadcast
     }
 
     public function broadcastWith(){
-        return [$this->msg];
+        return ['msg'=>$this->msg];
     }
 
 

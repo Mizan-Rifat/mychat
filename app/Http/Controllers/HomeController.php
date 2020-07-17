@@ -16,29 +16,24 @@ use Illuminate\Support\Facades\Session;
 
 class HomeController extends Controller
 {
-    
+
     public function __construct()
     {
-      
+
     }
 
-    
+
     public function test()
-    { 
-
-      $user = User::where('id','1')->get();
-      if($user->isEmpty()){
-          return 'gfg';
-      }else{
-          return 'sdf';
-      }
-      
+    {
 
 
-        $messages  = MessageModel::unseenMessages(1,2)->update(['seen'=>3]);
+        $messages  = MessageModel::where('id',1)
+                    ->with('contents')
+                    ->first();
 
 
      return $messages;
+
         return new MessageResource($messages);
 
     }
@@ -47,7 +42,7 @@ class HomeController extends Controller
     {
         DB::table('msg_tbl')->truncate();
         DB::table('msg_content_tbl')->truncate();
-     
+
     }
 
 
@@ -119,9 +114,9 @@ class HomeController extends Controller
             'description' => 'Example Charge',
             'source'=>$token
         ]);
-        
+
 
         Session::flash('success', 'Payment successful!');
-          
+
     }
 }

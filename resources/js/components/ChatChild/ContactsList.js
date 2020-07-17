@@ -12,13 +12,17 @@ export default function ContactsList() {
   // const [flag, setFlag] = useState(false);
   const [query, setQuery] = useQueryState("rid", "");
 
-  const { setRid, contactState, contactDispatch } = useContext(MyContext);
-  const { setOpen } = useContext(drawerContext);
+  const { contactState, contactDispatch } = useContext(MyContext);
+  // const { setOpen } = useContext(drawerContext);
 
   const handleSelect = (contact) => {
     setQuery(contact.id);
-    setRid(contact.id);
-    setOpen(false);
+    contactDispatch({
+      type:'SET_RID',
+      payload:contact.id
+    })
+    // setRid(contact.id);
+    // setOpen(false);
   };
 
   return (

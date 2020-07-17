@@ -1,5 +1,10 @@
 export default (state,action)=>{
     switch (action.type) {
+        case 'SET_RID':
+            return {
+                ...state,
+                rid:action.payload
+            }
         case 'SET_INIT_CONTACTS':
             return {
                 ...state,
@@ -10,9 +15,9 @@ export default (state,action)=>{
         case 'SET_SELECTED_USER':
             return {
                 ...state,
-                selectedUser:state.contacts.find(item => item.id == action.payload),
+                selectedUser:state.contacts.find(item => item.id == state.rid),
                 contacts:state.contacts.map(item => {
-                    if (item.id == action.payload) {
+                    if (item.id == state.rid) {
                         item.unReadMessages = 0;
                     }
                     return item;
@@ -21,50 +26,51 @@ export default (state,action)=>{
             }
         case 'SET_FILTERD_CONTACTS':
             return {
-                ...state,   
+                ...state,
                 contacts: action.payload == "" ? state.initContacts : state.initContacts.filter(contact => contact.name.toUpperCase().includes(action.payload.toUpperCase()))
-                
+
             }
         case 'SET_CURRENT_USERS':
             return {
-                ...state,   
+                ...state,
                 currentUsers:[...state.currentUsers,...action.payload]
-                
+
             }
         case 'USER_JOINED':
             return {
-                ...state,   
+                ...state,
                 currentUsers:[...state.currentUsers,action.payload]
-                
+
             }
         case 'USER_LEAVED':
             return {
-                ...state,   
+                ...state,
                 currentUsers:state.currentUsers.filter(item=> item.id != action.payload.id)
-                
+
             }
         case 'RECEIVE_OTHER_MSGS':
             return {
                 ...state,
-                contacts :state.contacts.map(item => {
+                // play:true
+                contacts : state.rid != action.payload.from ?
+                    state.contacts.map(item => {
                     return item.id == action.payload.from ? { ...item, unReadMessages: item.unReadMessages + 1 } : item
-                }),
-                initContacts :state.initContacts.map(item => {
+                }) : state.contacts,
+                initContacts : state.rid != action.payload.from ?
+                    state.initContacts.map(item => {
                     return item.id == action.payload.from ? { ...item, unReadMessages: item.unReadMessages + 1 } : item
-                })
+                }) : state.initContacts,
+                play : state.rid != action.payload.from
             }
-        // case 'CLEAN_UNREAD_MESSAGE':
-        //     return {
-        //         ...state,
-        //         contacts :state.contacts.map(item => {
-        //             return item.id == action.payload ? { ...item, unReadMessages: 0 } : item
-        //         }),
-        //         initContacts :state.initContacts.map(item => {
-        //             return item.id == action.payload ? { ...item, unReadMessages: 0 } : item
-        //         })
-        //     }
 
-    
+          case 'SET_PLAY_FALSE':
+            return {
+              ...state,
+              play:false
+            }
+
+
+
 
         default:
             return state

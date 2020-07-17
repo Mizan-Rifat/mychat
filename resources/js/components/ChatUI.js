@@ -10,11 +10,18 @@ import ChatBoxHeader from "./ChatChild/ChatBoxHeader";
 import ChatBoxBody from "./ChatChild/ChatBoxBody";
 import ChatBoxFooter from "./ChatChild/ChatBoxFooter";
 import Sidebar from "./ChatChild/Sidebar";
-import { Button, Hidden } from "@material-ui/core";
-import { useHistory } from "react-router-dom";
+import {
+    Button,
+    Hidden
+} from "@material-ui/core";
+import {
+    useHistory
+} from "react-router-dom";
 import Welcome from "./Welcome";
 import MyDrawer2 from "./MyDrawer2";
-import { drawerContext } from "./App";
+import {
+    drawerContext
+} from "./App";
 import messageReducer from "./Reducers/MessageReducer";
 import contactsReducer from "./Reducers/ContactsReducer";
 import axios from "axios";
@@ -25,13 +32,15 @@ import CircularProgress from "@material-ui/core/CircularProgress";
 export const MyContext = createContext();
 
 export default function ChatUI(props) {
-    const { user } = useContext(drawerContext);
+    const {
+        user
+    } = useContext(drawerContext);
 
     const sound = new Audio("/uploads/audio/2.mp3");
 
     const [open, setOpen] = useState(false);
 
-    const [rid, setRid] = useState("");
+
 
     const history = useHistory();
 
@@ -43,13 +52,15 @@ export default function ChatUI(props) {
         activeUserName: ""
     };
     const initContactState = {
+        rid: '',
         contacts: [],
         initContacts: [],
         currentUsers: [],
         joinedUser: {},
         leavedUser: {},
         selectedUser: "",
-        fetchLoading: true
+        fetchLoading: true,
+        play: false
     };
 
     const [messageState, messageDispatch] = useReducer(
@@ -67,6 +78,8 @@ export default function ChatUI(props) {
         } else {
             const query = new URLSearchParams(props.location.search);
             const params = query.get("rid");
+
+            window.Echo.leaveChannel(`chat`)
 
             axios
                 .get(`/api/allusers`)
@@ -87,25 +100,32 @@ export default function ChatUI(props) {
                 })
                 .then(() => {
                     if (params != null) {
-                        setRid(params);
+                        contactDispatch({
+                            type: "SET_RID",
+                            payload: params
+                        });
                     }
                 });
 
             window.Echo.join(`chat`)
                 .here(users => {
-                    console.log({ users });
+                    console.log({
+                        users
+                    });
                     contactDispatch({
                         type: "SET_CURRENT_USERS",
                         payload: users
                     });
                 })
                 .joining(user => {
+                  console.log('juser',user)
                     contactDispatch({
                         type: "USER_JOINED",
                         payload: user
                     });
                 })
                 .leaving(user => {
+                  console.log('luser',user)
                     contactDispatch({
                         type: "USER_LEAVED",
                         payload: user
@@ -116,92 +136,125 @@ export default function ChatUI(props) {
                 "NewEvent",
                 function(data) {
                     console.log("mydata", data[0]);
-                    console.log({rid});
+
                     contactDispatch({
                         type: "RECEIVE_OTHER_MSGS",
-                        payload: {from:data[0],rid:rid}
+                        payload: {
+                            from: data[0]
+                        }
                     });
-                    sound.play();
+                    // sound.play();
                 }
             );
         }
     }, []);
 
     useEffect(() => {
-        if (rid != "") {
+        if (contactState.rid != "") {
             contactDispatch({
                 type: "SET_SELECTED_USER",
-                payload: rid
+                // payload: rid
             });
             setOpen(false);
         }
-    }, [rid]);
+    }, [contactState.rid]);
+
+    useEffect(() => {
+        if (contactState.play) {
+            sound.play()
+            const timeoutID = setTimeout(() => {
+                contactDispatch({
+                    type: "SET_PLAY_FALSE",
+                });
+            }, 1000);
+        }
+    }, [contactState.play]);
 
     return (
-        <MyContext.Provider
-            value={{
-                rid,
-                setRid,
+      <MyContext.Provider value = {
+            {
+
                 messageState,
                 messageDispatch,
                 contactState,
                 contactDispatch,
                 user
-            }}
-        >
-            <MyAppBar setOpen={setOpen} />
-            {// true ?
+            }
+        } >
+
+        <MyAppBar setOpen = {
+            setOpen
+        }
+        />
+
+        { // true ?
             contactState.fetchLoading ? (
-                <div
-                    className="d-flex justify-content-center align-items-center"
-                    style={{ height: "300px" }}
-                >
-                    <CircularProgress style={{ color: "darkblue" }} />
+              <div className = "d-flex justify-content-center align-items-center"
+                style = {
+                    {
+                        height: "300px"
+                    }
+                } >
+
+              <CircularProgress style = {
+                    {
+                        color: "darkblue"
+                    }
+                }
+                />
                 </div>
             ) : (
-                <div className="container h-100 mt-3">
-                    <div className="row justify-content-center h-100">
-                        <Hidden xsDown>
-                                <div className="col-md-5 col-xl-4 chat">
-                                    <div className="card mb-sm-3 mb-md-0 contacts_card">
+              <div className = "container h-100 mt-3" >
+                < div className = "row justify-content-center h-100" >
+                    <Hidden xsDown >
+                        <div className = "col-md-5 col-xl-4 chat" >
+                        <div className = "card mb-sm-3 mb-md-0 contacts_card" >
 
-                                            <Sidebar />
+                <Sidebar / >
 
-                                        <div className="card-footer" />
-                                    </div>
-                                </div>
-                            </Hidden>
-
-                        <div className="col-md-7 col-xl-7 chat">
-                            <div
-                                className="card"
-                                style={{ position: "relative" }}
-                            >
-                                {rid == "" ? (
-                                    <Welcome />
-                                ) : (
-                                    
-                                        <ChatBox />
-                                    
-                                )}
-                            </div>
-                        </div>
-
-                        <MyDrawer2
-                            open={open}
-                            setOpen={setOpen}
-                            components={
-                                <div className="card sidebarCard mb-sm-3 mb-md-0 contacts_card">
-                                   
-                                        <Sidebar />
-
-                                    <div className="card-footer" />
-                                </div>
-                            }
-                        />
-                    </div>
+                <div className = "card-footer" / >
                 </div>
-            )}
+                </div>
+                </Hidden>
+
+                <div className = "col-md-7 col-xl-7 chat" >
+                <div className = "card"
+                style = {
+                    {
+                        position: "relative"
+                    }
+                } >
+                {
+                    contactState.rid == "" ? (
+                      <Welcome / >
+                    ) : (
+
+                        <ChatBox / >
+
+                    )
+                }
+                </div>
+                </div>
+
+                <MyDrawer2 open = {
+                    open
+                }
+                setOpen = {
+                    setOpen
+                }
+                components = {
+                    <div className = "card sidebarCard mb-sm-3 mb-md-0 contacts_card" >
+
+                    <Sidebar / >
+
+                    <div className = "card-footer" / >
+                    </div>
+                }
+                />
+                </div>
+                </div>
+            )
+        }
         </MyContext.Provider>
     );
 }
