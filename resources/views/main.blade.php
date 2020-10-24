@@ -7,8 +7,8 @@
 
         <title>MyChat</title>
         <link rel="shortcut icon" href="{{asset('/images/favicon.png')}}" type="image/x-icon">
-        <link rel="stylesheet" href="{{asset('/css/app.css')}}">
-        <link rel="stylesheet" href="{{asset('/css/style.css')}}">
+        <link rel="stylesheet" href="{{ asset('css/app.css?v='.filemtime(public_path('css/app.css'))) }}" >
+        <link rel="stylesheet" href="{{ asset('css/style.css?v='.filemtime(public_path('css/style.css'))) }}" >
         <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 
     </head>

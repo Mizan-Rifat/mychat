@@ -189,19 +189,9 @@ export default function ChatUI(props) {
 
         { // true ?
             contactState.fetchLoading ? (
-              <div className = "d-flex justify-content-center align-items-center"
-                style = {
-                    {
-                        height: "300px"
-                    }
-                } >
+              <div className = "d-flex justify-content-center align-items-center" style = {{height: "300px"}} >
 
-              <CircularProgress style = {
-                    {
-                        color: "darkblue"
-                    }
-                }
-                />
+                <CircularProgress style = {{color: "darkblue"}}/>
                 </div>
             ) : (
               <div className = "container h-100 mt-3" >

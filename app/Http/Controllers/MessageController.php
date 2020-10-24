@@ -179,6 +179,8 @@ class MessageController extends Controller
     public function store(Request $request)
     {
 
+      return $request->content[0]->getSize();
+
         if ($request->format == 'image') {
             collect($request->content)->map(function ($item) {
 
