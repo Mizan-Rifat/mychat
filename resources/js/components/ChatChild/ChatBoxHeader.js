@@ -7,10 +7,9 @@ import { MyContext } from '../ChatUI';
 import axios from 'axios'
 
 export default function ChatBoxHeader() {
+
     const [anchorEl, setAnchorEl] = React.useState(null);
-
     const { contactState,messageState, messageDispatch} = useContext(MyContext);
-
 
     const handleClick = event => {
         setAnchorEl(event.currentTarget);

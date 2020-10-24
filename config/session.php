@@ -153,8 +153,8 @@ return [
     |
     */
 
-    // 'domain' => '127.0.0.1',
-    'domain' => '192.168.0.100',
+    'domain' => '127.0.0.1',
+    // 'domain' => '192.168.0.100',
     // 'domain' => env('SESSION_DOMAIN', null),
 
     /*
