@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { MyContext } from "../ChatUI";
-import { drawerContext } from "../App";
+import { drawerContext } from "../Routes";
 import { useHistory } from "react-router-dom";
 import Scrollbar from "react-scrollbars-custom";
 import { NavLink } from "react-router-dom";
@@ -8,33 +8,41 @@ import { useQueryState } from "react-router-use-location-state";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
+import {setRecipient} from '../Redux/Ducks/recipientDuck';
+import clsx from 'clsx';
+
+
+
 export default function ContactsList() {
   // const [flag, setFlag] = useState(false);
   const [query, setQuery] = useQueryState("rid", "");
 
-  const { contactState, contactDispatch } = useContext(MyContext);
-  // const { setOpen } = useContext(drawerContext);
+  const {contacts} = useSelector(state => state.contacts)
+  const {currentUsers} = useSelector(state => state.currentUsers)
+  const {recipient} = useSelector(state => state.recipient)
+
+  const dispatch = useDispatch();
+
 
   const handleSelect = (contact) => {
+    
     setQuery(contact.id);
-    contactDispatch({
-      type:'SET_RID',
-      payload:contact.id
-    })
-    // setRid(contact.id);
-    // setOpen(false);
+    dispatch(setRecipient(contact))
+
   };
 
   return (
     <Scrollbar>
       <div className="card-body contacts_body">
         <List className="contacts">
-          {contactState.contacts.length == 0 ? (
-            <div className="d-flex justify-content-center">
-              <p style={{ color: "white" }}>No User Found...</p>
-            </div>
-          ) : (
-            contactState.contacts.map((contact, index) => (
+          {
+            contacts.length == 0 ? 
+              <div className="d-flex justify-content-center">
+                <p style={{ color: "white" }}>No User Found...</p>
+              </div>
+              : 
+            contacts.map((contact, index) => (
               <div
                 to={`/message?rid=${contact.id}`}
                 className="contact_nav"
@@ -43,11 +51,7 @@ export default function ContactsList() {
               >
                 <ListItem
                   key={index}
-                  className={
-                    contactState.selectedUser != undefined ?
-                          contactState.selectedUser.id == contact.id ? "active" : ""
-                          : ''
-                  }
+                  className={clsx({'active':contact.id == recipient.id})}
                 >
                   <div
                     className="d-flex bd-highlight justify-content-between"
@@ -60,24 +64,25 @@ export default function ContactsList() {
                           className="rounded-circle user_img"
                         />
 
-                        {contactState.currentUsers.some(
-                          (user) => user.id == contact.id
-                        ) ? (
-                          <span className="online_icon" />
-                        ) : (
-                          <span className="online_icon offline" />
-                        )}
+                        {
+                          currentUsers.some((user) => user.id == contact.id) ? 
+                            <span className="online_icon" />
+                           :
+                            <span className="online_icon offline" />
+                        }
                       </div>
+
                       <div className="user_info">
                         <span>{contact.name}</span>
-                        {contactState.currentUsers.some(
-                          (user) => user.id == contact.id
-                        ) ? (
-                          <p>{contact.name} is online</p>
-                        ) : (
-                          <p>{contact.name} is offline</p>
-                        )}
+                        {
+                          currentUsers.some((user) => user.id == contact.id) ? 
+                          
+                            <p>{contact.name} is online</p>
+                            :
+                            <p>{contact.name} is offline</p>
+                        }
                       </div>
+
                     </div>
                     <div
                       className="d-flex justify-content-center align-items-center"
@@ -96,7 +101,7 @@ export default function ContactsList() {
                 </ListItem>
               </div>
             ))
-          )}
+          }
         </List>
       </div>
     </Scrollbar>

@@ -12,7 +12,7 @@ import MenuIcon from '@material-ui/icons/Menu';
 import { Hidden } from '@material-ui/core';
 import axios from 'axios'
 import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
-import { drawerContext } from './App';
+import { drawerContext } from './Routes';
 import { MyContext } from './ChatUI';
 import { useQueryState } from 'react-router-use-location-state';
 

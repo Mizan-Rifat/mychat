@@ -1,15 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import SearchIcon from '@material-ui/icons/Search';
-import { MyContext } from '../ChatUI';
 
 export default function SearchBar() {
 
-    const {contactDispatch } = useContext(MyContext);
 
     const [query, setQuery] = useState('')
 
     useEffect(() => {
-        contactDispatch({ type: 'SET_FILTERD_CONTACTS', payload: query })
   
     }, [query])
 

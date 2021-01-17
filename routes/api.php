@@ -19,7 +19,9 @@ use Illuminate\Support\Facades\Route;
 // });
 
 Route::middleware('auth:airlock')->get('/user', function (Request $request) {
-    return Auth::user();
+    return response()->json([
+        'data' => Auth::user()
+    ]);
 });
 
 Route::get('/test', 'HomeController@test');

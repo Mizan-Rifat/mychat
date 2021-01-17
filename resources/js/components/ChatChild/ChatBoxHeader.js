@@ -5,11 +5,14 @@ import MoreVertIcon from '@material-ui/icons/MoreVert';
 import IconButton from '@material-ui/core/IconButton';
 import { MyContext } from '../ChatUI';
 import axios from 'axios'
+import { useSelector } from 'react-redux';
 
 export default function ChatBoxHeader() {
 
     const [anchorEl, setAnchorEl] = React.useState(null);
-    const { contactState,messageState, messageDispatch} = useContext(MyContext);
+
+    const {recipient} = useSelector(state => state.recipient)
+    const {currentUsers} = useSelector(state => state.currentUsers)
 
     const handleClick = event => {
         setAnchorEl(event.currentTarget);
@@ -39,13 +42,13 @@ return (
             <div className="img_cont">
                 <img src="https://static.turbosquid.com/Preview/001292/481/WV/_D.jpg" className="rounded-circle user_img" />
                 {
-                    contactState.currentUsers.some(user => user.id == contactState.rid) ? <span className="online_icon" /> : <span className="online_icon offline" />
+                    currentUsers.some(user => user.id == recipient.rid) ? <span className="online_icon" /> : <span className="online_icon offline" />
                 }
 
             </div>
             <div className="user_info">
-                <span>Chat with {contactState.selectedUser != undefined && contactState.selectedUser.name}</span>
-                <p>{messageState.msgsCount} Messages</p>
+                <span>Chat with {recipient.name}</span>
+                {/* <p>{messageState.msgsCount} Messages</p> */}
             </div>
 
         </div>

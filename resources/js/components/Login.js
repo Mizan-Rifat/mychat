@@ -8,7 +8,8 @@ import { makeStyles } from "@material-ui/core/styles";
 import LinearProgress from "@material-ui/core/LinearProgress";
 import { ThemeProvider, createMuiTheme } from "@material-ui/core/styles";
 import axios from "axios";
-import { drawerContext } from "./App";
+import { drawerContext } from "./Routes";
+import {useSelector} from 'react-redux'
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -34,26 +35,22 @@ const theme = createMuiTheme({
   },
 });
 
-export default function Auth(props) {
+export default function Login(props) {
   const classes = useStyles();
-  const { user, setUser } = useContext(drawerContext);
 
   const history = useHistory();
 
-  const [loading, setloading] = useState(false);
-  const [resLoading, setResLoading] = useState(false);
+  const {user,loading} = useSelector(state => state.sessionUser)
+
 
   useEffect(() => {
-    if (Object.entries(user.user).length > 0) {
+    if (Object.entries(user).length > 0) {
       history.push("/message");
     }
   }, [user]);
 
   return (
     <>
-      {loading ? (
-        ""
-      ) : (
         <div className="body">
           <div className="d-flex justify-content-center h-100">
             <div className="user_card">
@@ -61,25 +58,17 @@ export default function Auth(props) {
 
               {props.history.location.pathname == "/register" ? (
                 <>
-                  <RegistrationForm
-                    loading={resLoading}
-                    setLoading={setResLoading}
-                  />
+                  <RegistrationForm />
                 </>
               ) : (
                 <>
-                  <LoginForm
-                    loading={resLoading}
-                    setLoading={setResLoading}
-                    user={user}
-                    setUser={setUser}
-                  />
+                  <LoginForm />
 
                   <LoginFooter />
                 </>
               )}
 
-              {resLoading ? (
+              {loading ? (
                 <div className={classes.root}>
                   <ThemeProvider theme={theme}>
                     <LinearProgress />
@@ -91,7 +80,6 @@ export default function Auth(props) {
             </div>
           </div>
         </div>
-      )}
     </>
   );
 }

@@ -19,6 +19,7 @@ import { useHistory } from "react-router-dom";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import Snackbar from "@material-ui/core/Snackbar";
 import Slide from "@material-ui/core/Slide";
+import { useSelector } from "react-redux";
 
 function SlideTransition(props) {
     return <Slide {...props} direction="up" />;
@@ -51,6 +52,9 @@ function ChatBoxFooter({ listenerState, listenerDispatch }) {
     const [sendLoading, setSendLoding] = useState(false);
     const [send, setSend] = useState(false);
 
+    const {recipient} = useSelector(state => state.recipient)
+    const {user} = useSelector(state => state.sessionUser)
+
     const [snackbar, setSnackbar] = useState({
         open: false,
         message: ""
@@ -58,7 +62,6 @@ function ChatBoxFooter({ listenerState, listenerDispatch }) {
 
     const ref = useRef();
 
-    const { contactState,messageDispatch, user } = useContext(MyContext);
 
     const handleSend = e => {
         e.preventDefault();
@@ -68,7 +71,7 @@ function ChatBoxFooter({ listenerState, listenerDispatch }) {
         const config = { headers: { "Content-Type": "multipart/form-data" } };
         const formData = new FormData();
 
-        formData.append("msg_to", contactState.rid);
+        formData.append("msg_to", recipient.id);
 
         if (message != "") {
             formData.append("content[]", message);
@@ -118,9 +121,9 @@ function ChatBoxFooter({ listenerState, listenerDispatch }) {
     const handleFocus = () => {
         setPicker(false);
         window.Echo.private(
-            `chat.${Math.min(parseInt(contactState.rid), user.user.id)}.${Math.max(
-                parseInt(contactState.rid),
-                user.user.id
+            `chat.${Math.min(parseInt(recipient.id), user.id)}.${Math.max(
+                parseInt(recipient.id),
+                user.id
             )}`
         ).whisper("typing", {
             name: "typing"
@@ -128,9 +131,9 @@ function ChatBoxFooter({ listenerState, listenerDispatch }) {
     };
     const handleBlur = () => {
         window.Echo.private(
-            `chat.${Math.min(parseInt(contactState.rid), user.user.id)}.${Math.max(
-                parseInt(contactState.rid),
-                user.user.id
+            `chat.${Math.min(parseInt(recipient.id), user.id)}.${Math.max(
+                parseInt(recipient.id),
+                user.id
             )}`
         ).whisper("notTyping", {
             name: "notTyping"
@@ -168,7 +171,7 @@ function ChatBoxFooter({ listenerState, listenerDispatch }) {
 
     useEffect(() => {
         setMessage("");
-    }, [contactState.rid]);
+    }, [recipient]);
 
     useEffect(() => {
         if (message != "" || attachments.length > 0) {

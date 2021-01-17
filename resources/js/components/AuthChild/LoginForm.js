@@ -6,6 +6,8 @@ import {makeStyles} from "@material-ui/styles";
 import axios from "axios";
 import clsx from "clsx";
 import ErrorIcon from "@material-ui/icons/Error";
+import { loginUser } from "../Redux/Ducks/SessionUserDuck";
+import { useSelector,useDispatch } from "react-redux";
 
 const useStyles = makeStyles(theme => ({
   inputGroupText: {
@@ -28,8 +30,11 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-export default function LoginForm({loading, setLoading, user, setUser}) {
+export default function LoginForm() {
   const classes = useStyles();
+
+  const {sessionUser,loading} = useSelector(state => state.sessionUser)
+  const dispatch = useDispatch();
 
   const initState = {
     email: "",
@@ -71,52 +76,7 @@ export default function LoginForm({loading, setLoading, user, setUser}) {
 
   const login = e => {
     e.preventDefault();
-    // setResLoading(true);
-    setLoading(true);
-
-    axios
-      .get(`/airlock/csrf-cookie`)
-      .then(response => {
-        axios
-          .post(
-            `/login`,
-            {
-              email: loginData.email,
-              password: loginData.password,
-              remember: loginData.remember ? "on" : "",
-            }
-          )
-          .then(response => {
-            // setResLoading(false);
-            setLoading(false);
-
-            if (response.status === 200) {
-              setUser({
-                ...user,
-                user: response.data,
-              });
-              history.push("/message");
-            }
-          })
-          .catch(error => {
-            if (error.response.status == 422) {
-              setLoginData({
-                ...loginData,
-                error: "",
-                errors: error.response.data.errors,
-              });
-            }
-            if (error.response.status == 401) {
-              setLoginData({
-                ...loginData,
-                errors: [],
-                error: error.response.data.error,
-              });
-            }
-            // setResLoading(false);
-            setLoading(false);
-          });
-      });
+    dispatch(loginUser(loginData))
   };
 
   return (

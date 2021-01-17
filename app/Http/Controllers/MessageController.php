@@ -173,7 +173,7 @@ class MessageController extends Controller
             return $us;
         });
 
-        return response()->json(['users' => $users]);
+        return response()->json(['data' => $users]);
     }
 
     public function store(Request $request)
